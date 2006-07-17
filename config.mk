@@ -10,6 +10,9 @@ VERSION = 0.0
 LIBS = -L${PREFIX}/lib -L/usr/lib -lc
 
 # compiler
-CFLAGS      = -g -Wall -O2 -I${PREFIX}/include -I/usr/include \
+CFLAGS      = -Os -I${PREFIX}/include -I/usr/include \
 			-DVERSION=\"${VERSION}\"
-LDFLAGS     = -g ${LIBS}
+LDFLAGS     = ${LIBS}
+#CFLAGS      = -g -Wall -O2 -I${PREFIX}/include -I/usr/include \
+#			-DVERSION=\"${VERSION}\"
+#LDFLAGS     = -g ${LIBS}

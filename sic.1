@@ -29,6 +29,7 @@ is taken (along with many other profound ideas) from the Plan 9 operating
 system and has the form
 .B tcp!hostname!port
 for tcp sockets.
+.TP
 .BI \-p " password"
 Specifies the password to authenticate the nick on the server.
 .TP
@@ -41,17 +42,16 @@ Specifies the full name.
 Prints version information to standard output, then exits.
 .SH COMMANDS
 .TP
-.FN /j " #channel/user "
+.BI /j " #channel/user "
 join/query a channel/user
 .TP
-.FN /l " #channel "
+.BI /l " #channel "
 leave a channel/query
 .TP
-.FN /m " #channel/user msg "
+.BI /m " #channel/user msg "
 write a message to #channel/user
-.FN /t " topic"
+.BI /t " topic"
 set the channel topic
 .TP
 Everything which is not a command will simply be posted into the channel or to
 the server.
-.TP
