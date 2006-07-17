@@ -1,0 +1,57 @@
+.TH SIC 1 sic-0.0
+.SH NAME
+sic \- simple irc client
+.SH SYNOPSIS
+.B sic
+.RB \-a
+.IR address
+.RB [ \-n
+.IR nick ]
+.RB [ \-f
+.IR fullname ]
+.RB [ \-p
+.IR password ]
+.RB [ \-v ]
+.SH DESCRIPTION
+.B sic
+is an extremly fast, small and simple irc client.  It reads commands from
+standard input and prints all server output to standard output. It multiplexes
+also all channel traffic into one output, that you don't have to switch
+different channel buffers, that's actually a feature.
+.SH OPTIONS
+.TP
+.BI \-a " address "
+Lets you specify the address which
+.B sic
+uses to listen for connections.  The syntax for
+.I address
+is taken (along with many other profound ideas) from the Plan 9 operating
+system and has the form
+.B tcp!hostname!port
+for tcp sockets.
+.BI \-p " password"
+Specifies the password to authenticate the nick on the server.
+.TP
+.BI \-n " nick "
+Specifies the nick name (default: $USER).
+.TP
+.BI \-f " fullname "
+Specifies the full name.
+.BI \-v
+Prints version information to standard output, then exits.
+.SH COMMANDS
+.TP
+.FN /j " #channel/user "
+join/query a channel/user
+.TP
+.FN /l " #channel "
+leave a channel/query
+.TP
+.FN /m " #channel/user msg "
+write a message to #channel/user
+.FN /t " topic"
+set the channel topic
+.TP
+Everything which is not a command will simply be posted into the channel or to
+the server.
+.TP
