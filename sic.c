@@ -26,11 +26,11 @@
 
 enum { TOK_NICKSRV = 0, TOK_USER, TOK_CMD, TOK_CHAN, TOK_ARG, TOK_TEXT, TOK_LAST };
 
-static int irc;
-static time_t last_response;
+static char *host = NULL;
 static char nick[32];			/* might change while running */
 static char message[MAXMSG]; /* message buf used for communication */
-static char *host = NULL;
+static int irc;
+static time_t last_response;
 
 static int
 tcpopen(char *address)
