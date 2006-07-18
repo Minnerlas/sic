@@ -6,68 +6,103 @@
 
 #include <errno.h>
 #include <netdb.h>
-#include <sys/types.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
-#include <fcntl.h>
 #include <string.h>
-#include <pwd.h>
-#include <signal.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
-#include <ctype.h>
 #include <time.h>
-#include <unistd.h>
 
-#define PING_TIMEOUT 300
+#define PINGTIMEOUT 300
 #define MAXMSG 4096
 
-enum { TOK_NICKSRV = 0, TOK_USER, TOK_CMD, TOK_CHAN, TOK_ARG, TOK_TEXT, TOK_LAST };
+enum { Tnick, Tuser, Tcmd, Tchan, Targ, Ttext, Tlast };
 
-static char *host = NULL;
-static char nick[32];			/* might change while running */
-static char message[MAXMSG]; /* message buf used for communication */
-static int irc;
-static time_t last_response;
+/* CUSTOMIZE */
+static const char *ping = "PING irc.freenode.net\r\n";
+static const char *host = "irc.freenode.net";
+static const int port = 6667;
+static const char *nick = "garbeam";
+static const char *fullname = "Anselm R. Garbe";
+static const char *password = NULL;
+
+static char bufin[MAXMSG], bufout[MAXMSG];
+static int srv;
+static time_t trespond;
 
 static int
-tcpopen(char *address)
+getline(int fd, unsigned int len, char *buf)
 {
-	int fd = 0;
-	char *port;
-	struct sockaddr_in addr = { 0 };
-	struct hostent *hp;
-	unsigned int prt;
-	
-	if((host = strchr(address, '!')))
-		*(host++) = 0;
-
-	if(!(port = strrchr(host, '!')))
-		return -1;
-	*port = 0;
-	port++;
-	if(sscanf(port, "%d", &prt) != 1)
-		return -1;
-
-	/* init */
-	if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		return -1;
-	hp = gethostbyname(host);
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(prt);
-	bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
-
-	if(connect(fd, (struct sockaddr *) &addr,
-				sizeof(struct sockaddr_in))) {
-		close(fd);
-		return -1;
+	unsigned int i = 0;
+	char c;
+	do {
+		if(read(fd, &c, sizeof(char)) != sizeof(char))
+			return -1;
+		buf[i++] = c;
 	}
-	return fd;
+	while(c != '\n' && i < len);
+	buf[i - 1] = 0;
+	return 0;
 }
 
-unsigned int
+static void
+pout(char *channel, char *msg)
+{
+	static char timestr[18];
+	time_t t = time(0);
+
+	strftime(timestr, sizeof(timestr), "%F %R", localtime(&t));
+	fprintf(stdout, "%s: %s %s\n", channel, timestr, msg);
+}
+
+static void
+privmsg(char *channel, char *msg)
+{
+	snprintf(bufout, sizeof(bufout), "<%s> %s", nick, msg);
+	pout(channel, bufout);
+	snprintf(bufout, sizeof(bufout), "PRIVMSG %s :%s\r\n", channel, msg);
+	write(srv, bufout, strlen(bufout));
+}
+
+static void
+parsein(char *msg)
+{
+	char *p;
+
+	if((p = strchr(msg, ' ')))
+		*(p++) = 0;
+	if(msg[0] != '/' && msg[0] != 0) {
+		privmsg(msg, p);
+		return;
+	}
+	if((p = strchr(&msg[3], ' ')))
+		*(p++) = 0;
+	switch (msg[1]) {
+	case 'j':
+		if(msg[3] == '#')
+			snprintf(bufout, sizeof(bufout), "JOIN %s\r\n", &msg[3]);
+		else if(p) {
+			privmsg(&msg[3], p + 1);
+			return;
+		}
+		break;
+	case 'l':
+		if(p)
+			snprintf(bufout, sizeof(bufout), "PART %s :%s\r\n", &msg[3], p);
+		else
+			snprintf(bufout, sizeof(bufout), "PART %s :sic\r\n", &msg[3]);
+		break;
+	case 't':
+		snprintf(bufout, sizeof(bufout), "TOPIC %s :%s\r\n", &msg[3], p);
+		break;
+	default:
+		snprintf(bufout, sizeof(bufout), "%s\r\n", &msg[1]);
+		break;
+	}
+	write(srv, bufout, strlen(bufout));
+}
+
+static unsigned int
 tokenize(char **result, unsigned int reslen, char *str, char delim)
 {
 	char *p, *n;
@@ -94,77 +129,18 @@ tokenize(char **result, unsigned int reslen, char *str, char delim)
 }
 
 static void
-print_out(char *channel, char *buf)
+parsesrv(char *msg)
 {
-	static char buft[18];
-	time_t t = time(0);
-
-	strftime(buft, sizeof(buft), "%F %R", localtime(&t));
-	fprintf(stdout, "%s: %s %s\n", channel, buft, buf);
-}
-
-static void
-proc_channels_privmsg(char *channel, char *buf)
-{
-	snprintf(message, MAXMSG, "<%s> %s", nick, buf);
-	print_out(channel, message);
-	snprintf(message, MAXMSG, "PRIVMSG %s :%s\r\n", channel, buf);
-	write(irc, message, strlen(message));
-}
-
-static void
-proc_channels_input(char *buf)
-{
-	char *p;
-
-	if((p = strchr(buf, ' ')))
-		*(p++) = 0;
-	if(buf[0] != '/' && buf[0] != 0) {
-		proc_channels_privmsg(buf, p);
-		return;
-	}
-	if((p = strchr(&buf[3], ' ')))
-		*(p++) = 0;
-	switch (buf[1]) {
-	case 'j':
-		if(buf[3] == '#')
-			snprintf(message, MAXMSG, "JOIN %s\r\n", &buf[3]);
-		else if(p) {
-			proc_channels_privmsg(&buf[3], p + 1);
-			return;
-		}
-		break;
-	case 't':
-		snprintf(message, MAXMSG, "TOPIC %s :%s\r\n", &buf[3], p);
-		break;
-	case 'l':
-		if(p)
-			snprintf(message, MAXMSG, "PART %s :%s\r\n", &buf[3], p);
-		else
-			snprintf(message, MAXMSG, "PART %s :sic - 300 SLOC are too much\r\n", &buf[3]);
-		write(irc, message, strlen(message));
-		return;
-		break;
-	default:
-		snprintf(message, MAXMSG, "%s\r\n", &buf[1]);
-		break;
-	}
-	write(irc, message, strlen(message));
-}
-
-static void
-proc_server_cmd(char *buf)
-{
-	char *argv[TOK_LAST], *cmd, *p;
+	char *argv[Tlast], *cmd, *p;
 	int i;
-	if(!buf || *buf=='\0')
+	if(!msg || !(*msg))
 		return;
 
-	for(i = 0; i < TOK_LAST; i++)
+	for(i = 0; i < Tlast; i++)
 		argv[i] = NULL;
 
 	/*
-	   <message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
+	   <bufout>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
 	   <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <host> ]
 	   <command>  ::= <letter> { <letter> } | <number> <number> <number>
 	   <SPACE>    ::= ' ' { ' ' }
@@ -174,18 +150,18 @@ proc_server_cmd(char *buf)
 	   <trailing> ::= <Any, possibly *empty*, sequence of octets not including NUL or CR or LF>
 	   <crlf>     ::= CR LF
 	 */
-	if(buf[0] == ':') { /* check prefix */
-		p = strchr(buf, ' ');
+	if(msg[0] == ':') { /* check prefix */
+		p = strchr(msg, ' ');
 		*p = 0;
 		for(++p; *p == ' '; p++);
 		cmd = p;
-		argv[TOK_NICKSRV] = &buf[1];
-		if((p = strchr(buf, '!'))) {
+		argv[Tnick] = &msg[1];
+		if((p = strchr(msg, '!'))) {
 			*p = 0;
-			argv[TOK_USER] = ++p;
+			argv[Tuser] = ++p;
 		}
 	} else
-		cmd = buf;
+		cmd = msg;
 
 	/* remove CRLFs */
 	for(p = cmd; p && *p != 0; p++)
@@ -194,192 +170,156 @@ proc_server_cmd(char *buf)
 
 	if((p = strchr(cmd, ':'))) {
 		*p = 0;
-		argv[TOK_TEXT] = ++p;
+		argv[Ttext] = ++p;
 	}
-	tokenize(&argv[TOK_CMD], TOK_LAST - TOK_CMD, cmd, ' ');
+	tokenize(&argv[Tcmd], Tlast - Tcmd, cmd, ' ');
 
-	if(!strncmp("PONG", argv[TOK_CMD], 5)) {
+	if(!strncmp("PONG", argv[Tcmd], 5)) {
 		return;
-	} else if(!strncmp("PING", argv[TOK_CMD], 5)) {
-		snprintf(message, MAXMSG, "PONG %s\r\n", argv[TOK_TEXT]);
-		write(irc, message, strlen(message));
+	} else if(!strncmp("PING", argv[Tcmd], 5)) {
+		snprintf(bufout, sizeof(bufout), "PONG %s\r\n", argv[Ttext]);
+		write(srv, bufout, strlen(bufout));
 		return;
-	} else if(!argv[TOK_NICKSRV] || !argv[TOK_USER]) {	/* server command */
-		snprintf(message, MAXMSG, "%s", argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
-		print_out(0, message);
+	} else if(!argv[Tnick] || !argv[Tuser]) {	/* server command */
+		snprintf(bufout, sizeof(bufout), "%s", argv[Ttext] ? argv[Ttext] : "");
+		pout((char *)host, bufout);
 		return;
-	} else if(!strncmp("ERROR", argv[TOK_CMD], 6))
-		snprintf(message, MAXMSG, "-!- error %s",
-				argv[TOK_TEXT] ? argv[TOK_TEXT] : "unknown");
-	else if(!strncmp("JOIN", argv[TOK_CMD], 5)) {
-		if(argv[TOK_TEXT]!=NULL){
-			p = strchr(argv[TOK_TEXT], ' ');
+	} else if(!strncmp("ERROR", argv[Tcmd], 6))
+		snprintf(bufout, sizeof(bufout), "-!- error %s",
+				argv[Ttext] ? argv[Ttext] : "unknown");
+	else if(!strncmp("JOIN", argv[Tcmd], 5)) {
+		if(argv[Ttext]!=NULL){
+			p = strchr(argv[Ttext], ' ');
 		if(p)
 			*p = 0;
 		}
-		argv[TOK_CHAN] = argv[TOK_TEXT];
-		snprintf(message, MAXMSG, "-!- %s(%s) has joined %s",
-				argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_TEXT]);
-	} else if(!strncmp("PART", argv[TOK_CMD], 5)) {
-		snprintf(message, MAXMSG, "-!- %s(%s) has left %s",
-				argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_CHAN]);
-	} else if(!strncmp("MODE", argv[TOK_CMD], 5))
-		snprintf(message, MAXMSG, "-!- %s changed mode/%s -> %s %s",
-				argv[TOK_NICKSRV], argv[TOK_CMD + 1],
-				argv[TOK_CMD + 2], argv[TOK_CMD + 3]);
-	else if(!strncmp("QUIT", argv[TOK_CMD], 5))
-		snprintf(message, MAXMSG, "-!- %s(%s) has quit \"%s\"",
-				argv[TOK_NICKSRV], argv[TOK_USER],
-				argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
-	else if(!strncmp("NICK", argv[TOK_CMD], 5))
-		snprintf(message, MAXMSG, "-!- %s changed nick to %s",
-				argv[TOK_NICKSRV], argv[TOK_TEXT]);
-	else if(!strncmp("TOPIC", argv[TOK_CMD], 6))
-		snprintf(message, MAXMSG, "-!- %s changed topic to \"%s\"",
-				argv[TOK_NICKSRV], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
-	else if(!strncmp("KICK", argv[TOK_CMD], 5))
-		snprintf(message, MAXMSG, "-!- %s kicked %s (\"%s\")",
-				argv[TOK_NICKSRV], argv[TOK_ARG],
-				argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
-	else if(!strncmp("NOTICE", argv[TOK_CMD], 7))
-		snprintf(message, MAXMSG, "-!- \"%s\")",
-				argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
-	else if(!strncmp("PRIVMSG", argv[TOK_CMD], 8))
-		snprintf(message, MAXMSG, "<%s> %s",
-				argv[TOK_NICKSRV], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
-	if(!argv[TOK_CHAN] || !strncmp(argv[TOK_CHAN], nick, strlen(nick)))
-		print_out(argv[TOK_NICKSRV], message);
+		argv[Tchan] = argv[Ttext];
+		snprintf(bufout, sizeof(bufout), "-!- %s(%s) has joined %s",
+				argv[Tnick], argv[Tuser], argv[Ttext]);
+	} else if(!strncmp("PART", argv[Tcmd], 5)) {
+		snprintf(bufout, sizeof(bufout), "-!- %s(%s) has left %s",
+				argv[Tnick], argv[Tuser], argv[Tchan]);
+	} else if(!strncmp("MODE", argv[Tcmd], 5))
+		snprintf(bufout, sizeof(bufout), "-!- %s changed mode/%s -> %s %s",
+				argv[Tnick], argv[Tcmd + 1],
+				argv[Tcmd + 2], argv[Tcmd + 3]);
+	else if(!strncmp("QUIT", argv[Tcmd], 5))
+		snprintf(bufout, sizeof(bufout), "-!- %s(%s) has quit \"%s\"",
+				argv[Tnick], argv[Tuser],
+				argv[Ttext] ? argv[Ttext] : "");
+	else if(!strncmp("NICK", argv[Tcmd], 5))
+		snprintf(bufout, sizeof(bufout), "-!- %s changed nick to %s",
+				argv[Tnick], argv[Ttext]);
+	else if(!strncmp("TOPIC", argv[Tcmd], 6))
+		snprintf(bufout, sizeof(bufout), "-!- %s changed topic to \"%s\"",
+				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
+	else if(!strncmp("KICK", argv[Tcmd], 5))
+		snprintf(bufout, sizeof(bufout), "-!- %s kicked %s (\"%s\")",
+				argv[Tnick], argv[Targ],
+				argv[Ttext] ? argv[Ttext] : "");
+	else if(!strncmp("NOTICE", argv[Tcmd], 7))
+		snprintf(bufout, sizeof(bufout), "-!- \"%s\")",
+				argv[Ttext] ? argv[Ttext] : "");
+	else if(!strncmp("PRIVMSG", argv[Tcmd], 8))
+		snprintf(bufout, sizeof(bufout), "<%s> %s",
+				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
+	if(!argv[Tchan] || !strncmp(argv[Tchan], nick, strlen(nick)))
+		pout(argv[Tnick], bufout);
 	else
-		print_out(argv[TOK_CHAN], message);
+		pout(argv[Tchan], bufout);
 }
 
 static int
-read_line(int fd, unsigned int res_len, char *buf)
+tcpopen()
 {
-	unsigned int i = 0;
-	char c;
-	do {
-		if(read(fd, &c, sizeof(char)) != sizeof(char))
-			return -1;
-		buf[i++] = c;
-	}
-	while(c != '\n' && i < res_len);
-	buf[i - 1] = 0;			/* eliminates '\n' */
-	return 0;
-}
+	int fd = -1;
+	struct sockaddr_in addr = { 0 };
+	struct hostent *hp;
+	
+	/* init */
+	if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return -1;
+	hp = gethostbyname(host);
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
 
-static void
-handle_server_output()
-{
-	static char buf[MAXMSG];
-	if(read_line(irc, MAXMSG, buf) == -1) {
-		perror("sic: remote host closed connection");
-		exit(EXIT_FAILURE);
+	if(connect(fd, (struct sockaddr *) &addr,
+				sizeof(struct sockaddr_in))) {
+		close(fd);
+		return -1;
 	}
-	proc_server_cmd(buf);
+	return fd;
 }
 
 int
 main(int argc, char *argv[])
 {
-	char address[256];
-	char *password = NULL;
-	char *fullname = NULL;
-	char ping_msg[512], buf[MAXMSG];
-	int i, n, r, maxfd;
-	struct passwd *spw = getpwuid(getuid());
+	int i;
 	struct timeval tv;
 	fd_set rd;
 
-	if(!spw) {
-		fprintf(stderr,"sic: getpwuid() failed\n"); 
-		exit(EXIT_FAILURE);
-	}
-	snprintf(nick, sizeof(nick), "%s", spw->pw_name);
-
-	if(argc == 2 && argv[1][0] == '-' && argv[1][1] == 'h')
-		goto Usage;
-
-	address[0] = 0;
-	for(i = 1; (i + 1 < argc) && (argv[i][0] == '-'); i++) {
+	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
 		default:
-Usage:
-			fputs("usage: sic -a address [-n nick] [-f fullname] [-p password] [-v]\n",
-					stdout);
+			fputs("usage: sic [-v]\n", stderr);
 			exit(EXIT_FAILURE);
 			break;
-		case 'a':
-			strncpy(address, argv[++i], sizeof(address));
-			break;
-		case 'n':
-			snprintf(nick, sizeof(nick), "%s", argv[++i]);
-			break;
-		case 'p':
-			password = argv[++i];
-			break;
-		case 'f':
-			fullname = argv[++i];
+		case 'v':
+			fputs("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
+			exit(EXIT_SUCCESS);
 			break;
 		}
 	}
 
-	if(!address[0])
-		goto Usage;
-
-	if((irc = tcpopen(address)) == -1) {
-		fprintf(stderr, "sic: cannot connect server '%s'\n", address);
+	if((srv = tcpopen()) == -1) {
+		fprintf(stderr, "sic: cannot connect server '%s'\n", host);
 		exit(EXIT_FAILURE);
 	}
 	/* login */
 	if(password)
-		snprintf(message, MAXMSG,
+		snprintf(bufout, sizeof(bufout),
 				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
 				password, nick, nick, host, fullname ? fullname : nick);
 	else
-		snprintf(message, MAXMSG, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
+		snprintf(bufout, sizeof(bufout), "NICK %s\r\nUSER %s localhost %s :%s\r\n",
 				 nick, nick, host, fullname ? fullname : nick);
-	write(irc, message, strlen(message));
+	write(srv, bufout, strlen(bufout));
 
-	snprintf(ping_msg, sizeof(ping_msg), "PING %s\r\n", host);
 	for(;;) {
 		FD_ZERO(&rd);
-		maxfd = irc;
 		FD_SET(0, &rd);
-		FD_SET(irc, &rd);
+		FD_SET(srv, &rd);
 		tv.tv_sec = 120;
 		tv.tv_usec = 0;
-		r = select(maxfd + 1, &rd, 0, 0, &tv);
-		if(r < 0) {
+		i = select(srv + 1, &rd, 0, 0, &tv);
+		if(i < 0) {
 			if(errno == EINTR)
 				continue;
 			perror("sic: error on select()");
 			exit(EXIT_FAILURE);
-		} else if(r == 0) {
-			if(time(NULL) - last_response >= PING_TIMEOUT) {
-				print_out(NULL, "-!- sic shutting down: ping timeout");
+		} else if(i == 0) {
+			if(time(NULL) - trespond >= PINGTIMEOUT) {
+				pout((char *)host, "-!- sic shutting down: parseing timeout");
 				exit(EXIT_FAILURE);
 			}
-			write(irc, ping_msg, strlen(ping_msg));
+			write(srv, ping, strlen(ping));
 			continue;
 		}
-		if(FD_ISSET(irc, &rd)) {
-			handle_server_output();
-			last_response = time(NULL);
+		if(FD_ISSET(srv, &rd)) {
+			if(getline(srv, sizeof(bufin), bufin) == -1) {
+				perror("sic: remote host closed connection");
+				exit(EXIT_FAILURE);
+			}
+			parsesrv(bufin);
+			trespond = time(NULL);
 		}
 		if(FD_ISSET(0, &rd)) {
-			i = n = 0;
-			for(;;) {
-				if((i = getchar()) == EOF) {
-					perror("sic: broken pipe");
-					exit(EXIT_FAILURE);
-				}
-				if(i == '\n' || n >= sizeof(buf) - 1)
-					break;
-				buf[n++] = i;
+			if(getline(0, sizeof(bufin), bufin) == -1) {
+				perror("sic: broken pipe");
+				exit(EXIT_FAILURE);
 			}
-			buf[n] = 0;
-			proc_channels_input(buf);
+			parsein(bufin);
 		}
 	}
 

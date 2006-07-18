@@ -3,14 +3,6 @@
 sic \- simple irc client
 .SH SYNOPSIS
 .B sic
-.RB \-a
-.IR address
-.RB [ \-n
-.IR nick ]
-.RB [ \-f
-.IR fullname ]
-.RB [ \-p
-.IR password ]
 .RB [ \-v ]
 .SH DESCRIPTION
 .B sic
@@ -20,24 +12,6 @@ also all channel traffic into one output, that you don't have to switch
 different channel buffers, that's actually a feature.
 .SH OPTIONS
 .TP
-.BI \-a " address "
-Lets you specify the address which
-.B sic
-uses to listen for connections.  The syntax for
-.I address
-is taken (along with many other profound ideas) from the Plan 9 operating
-system and has the form
-.B tcp!hostname!port
-for tcp sockets.
-.TP
-.BI \-p " password"
-Specifies the password to authenticate the nick on the server.
-.TP
-.BI \-n " nick "
-Specifies the nick name (default: $USER).
-.TP
-.BI \-f " fullname "
-Specifies the full name.
 .BI \-v
 Prints version information to standard output, then exits.
 .SH COMMANDS
