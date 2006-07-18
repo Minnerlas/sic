@@ -19,10 +19,10 @@
 enum { Tnick, Tuser, Tcmd, Tchan, Targ, Ttext, Tlast };
 
 /* CUSTOMIZE */
-static const char *ping = "PING irc.freenode.net\r\n";
-static const char *host = "irc.freenode.net";
+static const char *ping = "PING irc.oftc.net\r\n";
+static const char *host = "irc.oftc.net";
 static const int port = 6667;
-static const char *nick = "garbeam";
+static const char *nick = "garbeam2";
 static const char *fullname = "Anselm R. Garbe";
 static const char *password = NULL;
 
@@ -51,8 +51,8 @@ pout(char *channel, char *msg)
 	static char timestr[18];
 	time_t t = time(0);
 
-	strftime(timestr, sizeof(timestr), "%F %R", localtime(&t));
-	fprintf(stdout, "%s: %s %s\n", channel, timestr, msg);
+	strftime(timestr, sizeof(timestr), "%a %R", localtime(&t));
+	fprintf(stdout, "%s:\t%s\t%s\n", channel, timestr, msg);
 }
 
 static void
@@ -286,6 +286,7 @@ main(int argc, char *argv[])
 				 nick, nick, host, fullname ? fullname : nick);
 	write(srv, bufout, strlen(bufout));
 
+	setbuf(stdout, NULL); /* unbuffered stdout */
 	for(;;) {
 		FD_ZERO(&rd);
 		FD_SET(0, &rd);
