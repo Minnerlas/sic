@@ -22,7 +22,7 @@ enum { Tnick, Tuser, Tcmd, Tchan, Targ, Ttext, Tlast };
 static const char *ping = "PING irc.oftc.net\r\n";
 static const char *host = "irc.oftc.net";
 static const int port = 6667;
-static const char *nick = "garbeam2";
+static const char *nick = "arg";
 static const char *fullname = "Anselm R. Garbe";
 static const char *password = NULL;
 
@@ -52,7 +52,7 @@ pout(char *channel, char *msg)
 	time_t t = time(0);
 
 	strftime(timestr, sizeof(timestr), "%a %R", localtime(&t));
-	fprintf(stdout, "%s:\t%s\t%s\n", channel, timestr, msg);
+	fprintf(stdout, "%s: %s %s\n", channel, timestr, msg);
 }
 
 static void
@@ -220,8 +220,7 @@ parsesrv(char *msg)
 	else if(!strncmp("NOTICE", argv[Tcmd], 7))
 		snprintf(bufout, sizeof(bufout), "-!- \"%s\")",
 				argv[Ttext] ? argv[Ttext] : "");
-	else if(!strncmp("PRIVMSG", argv[Tcmd], 8))
-		snprintf(bufout, sizeof(bufout), "<%s> %s",
+	else if(!strncmp("PRIVMSG", argv[Tcmd], 8)) snprintf(bufout, sizeof(bufout), "<%s> %s",
 				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
 	if(!argv[Tchan] || !strncmp(argv[Tchan], nick, strlen(nick)))
 		pout(argv[Tnick], bufout);
@@ -229,34 +228,13 @@ parsesrv(char *msg)
 		pout(argv[Tchan], bufout);
 }
 
-static int
-tcpopen()
-{
-	int fd = -1;
-	struct sockaddr_in addr = { 0 };
-	struct hostent *hp;
-	
-	/* init */
-	if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		return -1;
-	hp = gethostbyname(host);
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
-
-	if(connect(fd, (struct sockaddr *) &addr,
-				sizeof(struct sockaddr_in))) {
-		close(fd);
-		return -1;
-	}
-	return fd;
-}
-
 int
 main(int argc, char *argv[])
 {
 	int i;
 	struct timeval tv;
+	struct hostent *hp;
+	struct sockaddr_in addr = { 0 };
 	fd_set rd;
 
 	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++) {
@@ -272,10 +250,21 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if((srv = tcpopen()) == -1) {
+	/* init */
+	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		fprintf(stderr, "sic: cannot connect server '%s'\n", host);
 		exit(EXIT_FAILURE);
 	}
+	hp = gethostbyname(host);
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
+	if(connect(srv, (struct sockaddr *) &addr, sizeof(struct sockaddr_in))) {
+		close(srv);
+		fprintf(stderr, "sic: cannot connect server '%s'\n", host);
+		exit(EXIT_FAILURE);
+	}
+
 	/* login */
 	if(password)
 		snprintf(bufout, sizeof(bufout),
