@@ -70,10 +70,8 @@ parsein(char *msg)
 {
 	char *p;
 
-	if((p = strchr(msg, ' ')))
-		*(p++) = 0;
-	if(msg[0] != '/' && msg[0] != 0) {
-		privmsg(channel, p);
+	if(msg[0] != '/') {
+		privmsg(channel, msg);
 		return;
 	}
 	if((p = strchr(&msg[3], ' ')))
@@ -94,10 +92,11 @@ parsein(char *msg)
 			snprintf(bufout, sizeof(bufout), "PART %s :sic\r\n", &msg[3]);
 		break;
 	case 'm':
-		privmsg(msg, p);
+		privmsg(&msg[3], p);
 		break;
 	case 's':
-		strncpy(channel, msg, sizeof(channel));
+		strncpy(channel, &msg[3], sizeof(channel));
+		return;
 		break;
 	case 't':
 		snprintf(bufout, sizeof(bufout), "TOPIC %s :%s\r\n", &msg[3], p);
