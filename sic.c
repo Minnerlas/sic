@@ -27,6 +27,7 @@ static const char *fullname = "Anselm R. Garbe";
 static const char *password = NULL;
 
 static char bufin[MAXMSG], bufout[MAXMSG];
+static char channel[256];
 static int srv;
 static time_t trespond;
 
@@ -72,7 +73,7 @@ parsein(char *msg)
 	if((p = strchr(msg, ' ')))
 		*(p++) = 0;
 	if(msg[0] != '/' && msg[0] != 0) {
-		privmsg(msg, p);
+		privmsg(channel, p);
 		return;
 	}
 	if((p = strchr(&msg[3], ' ')))
@@ -91,6 +92,12 @@ parsein(char *msg)
 			snprintf(bufout, sizeof(bufout), "PART %s :%s\r\n", &msg[3], p);
 		else
 			snprintf(bufout, sizeof(bufout), "PART %s :sic\r\n", &msg[3]);
+		break;
+	case 'm':
+		privmsg(msg, p);
+		break;
+	case 's':
+		strncpy(channel, msg, sizeof(channel));
 		break;
 	case 't':
 		snprintf(bufout, sizeof(bufout), "TOPIC %s :%s\r\n", &msg[3], p);
@@ -275,6 +282,7 @@ main(int argc, char *argv[])
 				 nick, nick, host, fullname ? fullname : nick);
 	write(srv, bufout, strlen(bufout));
 
+	channel[0] = 0;
 	setbuf(stdout, NULL); /* unbuffered stdout */
 	for(;;) {
 		FD_ZERO(&rd);
