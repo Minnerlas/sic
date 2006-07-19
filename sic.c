@@ -77,6 +77,9 @@ parsein(char *msg)
 	if((p = strchr(&msg[3], ' ')))
 		*(p++) = 0;
 	switch (msg[1]) {
+	default:
+		snprintf(bufout, sizeof(bufout), "%s\r\n", &msg[1]);
+		break;
 	case 'j':
 		if(msg[3] == '#')
 			snprintf(bufout, sizeof(bufout), "JOIN %s\r\n", &msg[3]);
@@ -93,16 +96,12 @@ parsein(char *msg)
 		break;
 	case 'm':
 		privmsg(&msg[3], p);
-		break;
+		return;
 	case 's':
 		strncpy(channel, &msg[3], sizeof(channel));
 		return;
-		break;
 	case 't':
 		snprintf(bufout, sizeof(bufout), "TOPIC %s :%s\r\n", &msg[3], p);
-		break;
-	default:
-		snprintf(bufout, sizeof(bufout), "%s\r\n", &msg[1]);
 		break;
 	}
 	write(srv, bufout, strlen(bufout));
