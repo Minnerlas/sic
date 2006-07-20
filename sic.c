@@ -10,8 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <time.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 
 #define PINGTIMEOUT 300
 #define MAXMSG 4096
