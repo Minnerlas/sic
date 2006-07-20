@@ -250,19 +250,19 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 			break;
 		case 's':
-			server = argv[i++];
+			server = argv[++i];
 			break;
 		case 'p':
-			port = atoi(argv[i++]);
+			port = atoi(argv[++i]);
 			break;
 		case 'n':
-			nick = argv[i++];
+			nick = argv[++i];
 			break;
 		case 'k':
-			password = argv[i++];
+			password = argv[++i];
 			break;
 		case 'f':
-			fullname = argv[i++];
+			fullname = argv[++i];
 			break;
 		case 'v':
 			fputs("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
