@@ -18,7 +18,6 @@
 
 enum { Tnick, Tuser, Tcmd, Tchan, Targ, Ttext, Tlast };
 
-/* CUSTOMIZE */
 static char *server = "irc.oftc.net";
 static int port = 6667;
 static char *nick = NULL;
