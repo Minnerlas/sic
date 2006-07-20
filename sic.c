@@ -21,8 +21,8 @@ enum { Tnick, Tuser, Tcmd, Tchan, Targ, Ttext, Tlast };
 /* CUSTOMIZE */
 static char *server = "irc.oftc.net";
 static int port = 6667;
-static char *nick = "arg";
-static char *fullname = "Anselm R. Garbe";
+static char *nick = NULL;
+static char *fullname = NULL;
 static char *password = NULL;
 
 static char bufin[MAXMSG], bufout[MAXMSG];
@@ -242,6 +242,7 @@ main(int argc, char *argv[])
 	char ping[256];
 	fd_set rd;
 
+	nick = fullname = getenv("USER");
 	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
 		default:

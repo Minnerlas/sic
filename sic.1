@@ -3,6 +3,17 @@
 sic \- simple irc client
 .SH SYNOPSIS
 .B sic
+.RB [ \-s
+.IR server ]
+.RB [ \-p
+.IR port ]
+.RB [ \-n
+.IR nick ]
+.RB [ \-k
+.IR keyword ]
+.RB [ \-f
+.IR fullname ]
+.RB \-v
 .RB [ \-v ]
 .SH DESCRIPTION
 .B sic
@@ -11,6 +22,21 @@ standard input and prints all server output to standard output. It multiplexes
 also all channel traffic into one output, that you don't have to switch
 different channel buffers, that's actually a feature.
 .SH OPTIONS
+.TP
+.BI \-s " server"
+Overrides the default server (irc.oftc.net)
+.TP
+.BI \-p " port"
+Overrides the default port (6667)
+.TP
+.BI \-n " nickname"
+Override the default nick ($USER)
+.TP
+.BI \-k " keyword"
+Specifies the keyword to authenticate your nick on the server
+.TP
+.BI \-f " fullname"
+Specify the real name (default is $USER)
 .TP
 .BI \-v
 Prints version information to standard output, then exits.
