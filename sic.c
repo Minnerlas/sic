@@ -52,7 +52,7 @@ pout(char *channel, char *msg)
 	time_t t = time(0);
 
 	strftime(timestr, sizeof(timestr), "%a %R", localtime(&t));
-	fprintf(stdout, "%s %s: %s\n", timestr, channel, msg);
+	fprintf(stdout, "%s: %s %s\n", channel, timestr, msg);
 }
 
 static void
