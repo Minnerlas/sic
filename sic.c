@@ -328,7 +328,6 @@ main(int argc, char *argv[])
 			trespond = time(NULL);
 		}
 		if(FD_ISSET(0, &rd)) {
-			fprintf(stdout, "%s> ", channel);
 			if(getline(0, sizeof(bufin), bufin) == -1) {
 				perror("sic: broken pipe");
 				exit(EXIT_FAILURE);
