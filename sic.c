@@ -19,12 +19,11 @@
 enum { Tnick, Tuser, Tcmd, Tchan, Targ, Ttext, Tlast };
 
 /* CUSTOMIZE */
-static const char *ping = "PING irc.oftc.net\r\n";
-static const char *host = "irc.oftc.net";
-static const int port = 6667;
-static const char *nick = "arg";
-static const char *fullname = "Anselm R. Garbe";
-static const char *password = NULL;
+static char *server = "irc.oftc.net";
+static int port = 6667;
+static char *nick = "arg";
+static char *fullname = "Anselm R. Garbe";
+static char *password = NULL;
 
 static char bufin[MAXMSG], bufout[MAXMSG];
 static char channel[256];
@@ -146,7 +145,7 @@ parsesrv(char *msg)
 
 	/*
 	   <bufout>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
-	   <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <host> ]
+	   <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <server> ]
 	   <command>  ::= <letter> { <letter> } | <number> <number> <number>
 	   <SPACE>    ::= ' ' { ' ' }
 	   <params>   ::= <SPACE> [ ':' <trailing> | <middle> <params> ]
@@ -187,7 +186,7 @@ parsesrv(char *msg)
 		return;
 	} else if(!argv[Tnick] || !argv[Tuser]) {	/* server command */
 		snprintf(bufout, sizeof(bufout), "%s", argv[Ttext] ? argv[Ttext] : "");
-		pout((char *)host, bufout);
+		pout(server, bufout);
 		return;
 	} else if(!strncmp("ERROR", argv[Tcmd], 6))
 		snprintf(bufout, sizeof(bufout), "-!- error %s",
@@ -240,13 +239,30 @@ main(int argc, char *argv[])
 	struct timeval tv;
 	struct hostent *hp;
 	struct sockaddr_in addr = { 0 };
+	char ping[256];
 	fd_set rd;
 
 	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
 		default:
-			fputs("usage: sic [-v]\n", stderr);
+			fputs("usage: sic [-s server] [-p port] [-n nick]"
+					" [-k keyword] [-f fullname] [-v]\n", stderr);
 			exit(EXIT_FAILURE);
+			break;
+		case 's':
+			server = argv[i++];
+			break;
+		case 'p':
+			port = atoi(argv[i++]);
+			break;
+		case 'n':
+			nick = argv[i++];
+			break;
+		case 'k':
+			password = argv[i++];
+			break;
+		case 'f':
+			fullname = argv[i++];
 			break;
 		case 'v':
 			fputs("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
@@ -257,29 +273,30 @@ main(int argc, char *argv[])
 
 	/* init */
 	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		fprintf(stderr, "sic: cannot connect server '%s'\n", host);
+		fprintf(stderr, "sic: cannot connect server '%s'\n", server);
 		exit(EXIT_FAILURE);
 	}
-	hp = gethostbyname(host);
+	hp = gethostbyname(server);
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
 	if(connect(srv, (struct sockaddr *) &addr, sizeof(struct sockaddr_in))) {
 		close(srv);
-		fprintf(stderr, "sic: cannot connect server '%s'\n", host);
+		fprintf(stderr, "sic: cannot connect server '%s'\n", server);
 		exit(EXIT_FAILURE);
 	}
 
 	/* login */
 	if(password)
 		snprintf(bufout, sizeof(bufout),
-				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
-				password, nick, nick, host, fullname ? fullname : nick);
+				"PASS %s\r\nNICK %s\r\nUSER %s localserver %s :%s\r\n",
+				password, nick, nick, server, fullname ? fullname : nick);
 	else
-		snprintf(bufout, sizeof(bufout), "NICK %s\r\nUSER %s localhost %s :%s\r\n",
-				 nick, nick, host, fullname ? fullname : nick);
+		snprintf(bufout, sizeof(bufout), "NICK %s\r\nUSER %s localserver %s :%s\r\n",
+				 nick, nick, server, fullname ? fullname : nick);
 	write(srv, bufout, strlen(bufout));
 
+	snprintf(ping, sizeof(ping), "PING %s\r\n", server);
 	channel[0] = 0;
 	setbuf(stdout, NULL); /* unbuffered stdout */
 	for(;;) {
@@ -296,7 +313,7 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		} else if(i == 0) {
 			if(time(NULL) - trespond >= PINGTIMEOUT) {
-				pout((char *)host, "-!- sic shutting down: parseing timeout");
+				pout(server, "-!- sic shutting down: parseing timeout");
 				exit(EXIT_FAILURE);
 			}
 			write(srv, ping, strlen(ping));
@@ -304,13 +321,14 @@ main(int argc, char *argv[])
 		}
 		if(FD_ISSET(srv, &rd)) {
 			if(getline(srv, sizeof(bufin), bufin) == -1) {
-				perror("sic: remote host closed connection");
+				perror("sic: remote server closed connection");
 				exit(EXIT_FAILURE);
 			}
 			parsesrv(bufin);
 			trespond = time(NULL);
 		}
 		if(FD_ISSET(0, &rd)) {
+			fprintf(stdout, "%s> ", channel);
 			if(getline(0, sizeof(bufin), bufin) == -1) {
 				perror("sic: broken pipe");
 				exit(EXIT_FAILURE);
