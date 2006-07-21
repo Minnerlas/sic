@@ -294,10 +294,10 @@ main(int argc, char *argv[])
 	if(password)
 		snprintf(bufout, sizeof(bufout),
 				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
-				password, nick, nick, server, fullname ? fullname : nick);
+				password, nick, nick, server, fullname);
 	else
 		snprintf(bufout, sizeof(bufout), "NICK %s\r\nUSER %s localhost %s :%s\r\n",
-				 nick, nick, server, fullname ? fullname : nick);
+				 nick, nick, server, fullname);
 	write(srv, bufout, strlen(bufout));
 
 	snprintf(ping, sizeof(ping), "PING %s\r\n", server);
