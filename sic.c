@@ -52,13 +52,13 @@ pout(char *channel, char *msg)
 	time_t t = time(0);
 
 	strftime(timestr, sizeof(timestr), "%a %R", localtime(&t));
-	fprintf(stdout, "%s: %s %s\n", channel, timestr, msg);
+	fprintf(stdout, "%-12.12s: %s %s\n", channel, timestr, msg);
 }
 
 static void
 privmsg(char *channel, char *msg)
 {
-	snprintf(bufout, sizeof(bufout), "<%s> %s", nick, msg);
+	snprintf(bufout, sizeof(bufout), "<%12s> %s", nick, msg);
 	pout(channel, bufout);
 	snprintf(bufout, sizeof(bufout), "PRIVMSG %s :%s\r\n", channel, msg);
 	write(srv, bufout, strlen(bufout));
@@ -224,7 +224,8 @@ parsesrv(char *msg)
 	else if(!strncmp("NOTICE", argv[Tcmd], 7))
 		snprintf(bufout, sizeof(bufout), "-!- \"%s\")",
 				argv[Ttext] ? argv[Ttext] : "");
-	else if(!strncmp("PRIVMSG", argv[Tcmd], 8)) snprintf(bufout, sizeof(bufout), "<%s> %s",
+	else if(!strncmp("PRIVMSG", argv[Tcmd], 8))
+		snprintf(bufout, sizeof(bufout), "<%12s> %s",
 				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
 	if(!argv[Tchan] || !strncmp(argv[Tchan], nick, strlen(nick)))
 		pout(argv[Tnick], bufout);
@@ -242,6 +243,10 @@ main(int argc, char *argv[])
 	char ping[256];
 	fd_set rd;
 
+	pout(server, "test 123");
+	pout(server, "test whdhwdwjdw djwhdwkjdwhk dwhdwkdw 123");
+	pout("kjfwefiuewu", "test 123");
+	pout(server, "test dwdw 123");
 	nick = fullname = getenv("USER");
 	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
