@@ -4,13 +4,13 @@
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 
-VERSION = 0.1
+VERSION = 0.2
 
 # includes and libs
 LIBS = -L${PREFIX}/lib -L/usr/lib -lc
 
 # compiler
-CFLAGS      = -Os -I${PREFIX}/include -I/usr/include \
+CFLAGS      = -O3 -I${PREFIX}/include -I/usr/include \
 			-DVERSION=\"${VERSION}\"
 LDFLAGS     = ${LIBS}
 #CFLAGS      = -g -Wall -O2 -I${PREFIX}/include -I/usr/include \
