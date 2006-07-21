@@ -58,7 +58,7 @@ pout(char *channel, char *msg)
 static void
 privmsg(char *channel, char *msg)
 {
-	snprintf(bufout, sizeof(bufout), "<%12s> %s", nick, msg);
+	snprintf(bufout, sizeof(bufout), "<%s> %s", nick, msg);
 	pout(channel, bufout);
 	snprintf(bufout, sizeof(bufout), "PRIVMSG %s :%s\r\n", channel, msg);
 	write(srv, bufout, strlen(bufout));
@@ -69,6 +69,8 @@ parsein(char *msg)
 {
 	char *p;
 
+	if(msg[0] == 0)
+		return;
 	if(msg[0] != '/') {
 		privmsg(channel, msg);
 		return;
@@ -225,7 +227,7 @@ parsesrv(char *msg)
 		snprintf(bufout, sizeof(bufout), "-!- \"%s\")",
 				argv[Ttext] ? argv[Ttext] : "");
 	else if(!strncmp("PRIVMSG", argv[Tcmd], 8))
-		snprintf(bufout, sizeof(bufout), "<%12s> %s",
+		snprintf(bufout, sizeof(bufout), "<%s> %s",
 				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
 	if(!argv[Tchan] || !strncmp(argv[Tchan], nick, strlen(nick)))
 		pout(argv[Tnick], bufout);
