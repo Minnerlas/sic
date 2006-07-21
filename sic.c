@@ -295,10 +295,10 @@ main(int argc, char *argv[])
 	/* login */
 	if(password)
 		snprintf(bufout, sizeof(bufout),
-				"PASS %s\r\nNICK %s\r\nUSER %s localserver %s :%s\r\n",
+				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
 				password, nick, nick, server, fullname ? fullname : nick);
 	else
-		snprintf(bufout, sizeof(bufout), "NICK %s\r\nUSER %s localserver %s :%s\r\n",
+		snprintf(bufout, sizeof(bufout), "NICK %s\r\nUSER %s localhost %s :%s\r\n",
 				 nick, nick, server, fullname ? fullname : nick);
 	write(srv, bufout, strlen(bufout));
 
