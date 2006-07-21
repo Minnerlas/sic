@@ -243,10 +243,6 @@ main(int argc, char *argv[])
 	char ping[256];
 	fd_set rd;
 
-	pout(server, "test 123");
-	pout(server, "test whdhwdwjdw djwhdwkjdwhk dwhdwkdw 123");
-	pout("kjfwefiuewu", "test 123");
-	pout(server, "test dwdw 123");
 	nick = fullname = getenv("USER");
 	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
