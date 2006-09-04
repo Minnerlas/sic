@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 
@@ -20,7 +21,7 @@
 enum { Tnick, Tuser, Tcmd, Tchan, Targ, Ttext, Tlast };
 
 static char *server = "irc.oftc.net";
-static int port = 6667;
+static unsigned short port = 6667;
 static char *nick = NULL;
 static char *fullname = NULL;
 static char *password = NULL;
@@ -241,7 +242,7 @@ main(int argc, char *argv[])
 	int i;
 	struct timeval tv;
 	struct hostent *hp;
-	struct sockaddr_in addr = { 0 };
+	static struct sockaddr_in addr;  /* initially filled with 0's */
 	char ping[256];
 	fd_set rd;
 
@@ -257,7 +258,7 @@ main(int argc, char *argv[])
 			server = argv[++i];
 			break;
 		case 'p':
-			port = atoi(argv[++i]);
+			port = (unsigned short)atoi(argv[++i]);
 			break;
 		case 'n':
 			nick = argv[++i];
@@ -280,10 +281,13 @@ main(int argc, char *argv[])
 		fprintf(stderr, "sic: cannot connect server '%s'\n", server);
 		exit(EXIT_FAILURE);
 	}
-	hp = gethostbyname(server);
+	if (NULL == (hp = gethostbyname(server))) {
+		fprintf(stderr, "sic: cannot resolve hostname '%s'\n", server);
+		exit(EXIT_FAILURE);
+	}
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
-	bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
+	memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
 	if(connect(srv, (struct sockaddr *) &addr, sizeof(struct sockaddr_in))) {
 		close(srv);
 		fprintf(stderr, "sic: cannot connect server '%s'\n", server);
