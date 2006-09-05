@@ -1,10 +1,11 @@
+# sic version
+VERSION = 0.3
+
 # Customize to fit your system
 
 # paths
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
-
-VERSION = 0.2
 
 # includes and libs
 LIBS = -L${PREFIX}/lib -L/usr/lib -lc
