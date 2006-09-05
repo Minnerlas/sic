@@ -78,34 +78,32 @@ parsein(char *msg)
 	}
 	if((p = strchr(&msg[3], ' ')))
 		*(p++) = 0;
-	switch (msg[1]) {
-	default:
-		snprintf(bufout, sizeof(bufout), "%s\r\n", &msg[1]);
-		break;
-	case 'j':
+	if(!strncmp(msg + 1, "j ", 2)) {
 		if(msg[3] == '#')
 			snprintf(bufout, sizeof(bufout), "JOIN %s\r\n", &msg[3]);
 		else if(p) {
 			privmsg(&msg[3], p + 1);
 			return;
 		}
-		break;
-	case 'l':
+	}
+	else if(!strncmp(msg + 1, "l ", 2)) {
 		if(p)
 			snprintf(bufout, sizeof(bufout), "PART %s :%s\r\n", &msg[3], p);
 		else
 			snprintf(bufout, sizeof(bufout), "PART %s :sic\r\n", &msg[3]);
-		break;
-	case 'm':
+	}
+	else if(!strncmp(msg + 1, "m ", 2)) {
 		privmsg(&msg[3], p);
 		return;
-	case 's':
+	}
+	else if(!strncmp(msg + 1, "s ", 2)) {
 		strncpy(channel, &msg[3], sizeof(channel));
 		return;
-	case 't':
-		snprintf(bufout, sizeof(bufout), "TOPIC %s :%s\r\n", &msg[3], p);
-		break;
 	}
+	else if(!strncmp(msg + 1, "t ", 2))
+		snprintf(bufout, sizeof(bufout), "TOPIC %s :%s\r\n", &msg[3], p);
+	else
+		snprintf(bufout, sizeof(bufout), "%s\r\n", &msg[1]);
 	write(srv, bufout, strlen(bufout));
 }
 
