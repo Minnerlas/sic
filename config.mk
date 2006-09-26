@@ -1,19 +1,22 @@
 # sic version
 VERSION = 0.3
 
-# Customize to fit your system
+# Customize below to fit your system
 
 # paths
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 
 # includes and libs
-LIBS = -L${PREFIX}/lib -L/usr/lib -lc
+INCS = -I. -I/usr/include
+LIBS = -L/usr/lib -lc
 
-# compiler
-CFLAGS      = -O3 -I${PREFIX}/include -I/usr/include \
-			-DVERSION=\"${VERSION}\"
-LDFLAGS     = ${LIBS}
-#CFLAGS      = -g -Wall -O2 -I${PREFIX}/include -I/usr/include \
-#			-DVERSION=\"${VERSION}\"
-#LDFLAGS     = -g ${LIBS}
+# flags
+CFLAGS = -Os ${INCS} -DVERSION=\"${VERSION}\"
+LDFLAGS = ${LIBS}
+#CFLAGS = -g -Wall -O2 ${INCS} -DVERSION=\"${VERSION}\"
+#LDFLAGS = -g ${LIBS}
+
+# compiler and linker
+CC = cc
+LD = ${CC}

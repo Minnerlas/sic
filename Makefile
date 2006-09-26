@@ -1,59 +1,57 @@
-# ii - irc it - simple but flexible IRC client
-#   (C)opyright MMV Anselm R. Garbe, Nico Golde
+# sic - simple irc client
+#   (C)opyright MMVI Anselm R. Garbe
 
 include config.mk
 
 SRC = sic.c
 OBJ = ${SRC:.c=.o}
-MAN1 = sic.1
-BIN = sic
 
 all: options sic
-	@echo built sic
 
 options:
-	@echo ii build options:
-	@echo "LIBS     = ${LIBS}"
+	@echo sic build options:
 	@echo "CFLAGS   = ${CFLAGS}"
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
+	@echo "LD       = ${LD}"
 
 .c.o:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
+${OBJ}: config.mk
+
+sic: ${OBJ}
+	@echo LD $@
+	@${LD} -o $@ ${OBJ} ${LDFLAGS}
+	@strip $@
+
 clean:
-	rm -f sic *.o core sic-${VERSION}.tar.gz
+	@echo cleaning
+	@rm -f sic ${OBJ} sic-${VERSION}.tar.gz
 
 dist: clean
+	@echo creating dist tarball
 	@mkdir -p sic-${VERSION}
-	@cp -R Makefile README LICENSE config.mk sic.c sic.1 sic-${VERSION}
+	@cp -R LICENSE Makefile README config.mk sic.1 ${SRC} sic-${VERSION}
 	@tar -cf sic-${VERSION}.tar sic-${VERSION}
 	@gzip sic-${VERSION}.tar
 	@rm -rf sic-${VERSION}
 
-sic: ${OBJ}
-	@echo LD $@
-	@${CC} -o $@ ${OBJ} ${LDFLAGS}
-
 install: all
+	@echo installing executable file to ${DESTDIR}${PREFIX}/bin
 	@mkdir -p ${DESTDIR}${PREFIX}/bin
-	@cp -f ${BIN} ${DESTDIR}${PREFIX}/bin
-	@for i in ${BIN}; do \
-		chmod 755 ${DESTDIR}${PREFIX}/bin/`basename $$i`; \
-	done
-	@echo installed executable files to ${DESTDIR}${PREFIX}/bin
+	@cp -f sic ${DESTDIR}${PREFIX}/bin
+	@chmod 755 ${DESTDIR}${PREFIX}/bin/sic
+	@echo installing manual page to ${DESTDIR}${MANPREFIX}/man1
 	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
-	@cp -f ${MAN1} ${DESTDIR}${MANPREFIX}/man1
-	@for i in ${MAN1}; do \
-		chmod 444 ${DESTDIR}${MANPREFIX}/man1/`basename $$i`; \
-	done
-	@echo installed manual pages to ${DESTDIR}${MANPREFIX}/man1
+	@sed 's/VERSION/${VERSION}/g' < sic.1 > ${DESTDIR}${MANPREFIX}/man1/sic.1
+	@chmod 644 ${DESTDIR}${MANPREFIX}/man1/sic.1
 
 uninstall:
-	for i in ${BIN}; do \
-		rm -f ${DESTDIR}${PREFIX}/bin/`basename $$i`; \
-	done
-	for i in ${MAN1}; do \
-		rm -f ${DESTDIR}${MANPREFIX}/man1/`basename $$i`; \
-	done
+	@echo removing executable file from ${DESTDIR}${PREFIX}/bin
+	@rm -f ${DESTDIR}${PREFIX}/bin/sic
+	@echo removing manual page from ${DESTDIR}${MANPREFIX}/man1
+	@rm -f ${DESTDIR}${MANPREFIX}/man1/sic.1
+
+.PHONY: all options clean dist install uninstall

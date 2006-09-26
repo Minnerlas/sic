@@ -1,19 +1,13 @@
-.TH SIC 1 sic-0.2
+.TH SIC 1 sic-VERSION
 .SH NAME
 sic \- simple irc client
 .SH SYNOPSIS
 .B sic
-.RB [ \-s
-.IR server ]
-.RB [ \-p
-.IR port ]
-.RB [ \-n
-.IR nick ]
-.RB [ \-k
-.IR keyword ]
-.RB [ \-f
-.IR fullname ]
-.RB \-v
+.RB [ \-s <server> ]
+.RB [ \-p <port> ]
+.RB [ \-n <nick> ]
+.RB [ \-k <keyword> ]
+.RB [ \-f <fullname> ]
 .RB [ \-v ]
 .SH DESCRIPTION
 .B sic
@@ -23,38 +17,38 @@ also all channel traffic into one output, that you don't have to switch
 different channel buffers, that's actually a feature.
 .SH OPTIONS
 .TP
-.BI \-s " server"
+.B \-s <server>
 Overrides the default server (irc.oftc.net)
 .TP
-.BI \-p " port"
+.B \-p <port>
 Overrides the default port (6667)
 .TP
-.BI \-n " nickname"
+.B \-n <nickname>
 Override the default nick ($USER)
 .TP
-.BI \-k " keyword"
+.B \-k <keyword>
 Specifies the keyword to authenticate your nick on the server
 .TP
-.BI \-f " fullname"
+.B \-f <fullname>
 Specify the real name (default is $USER)
 .TP
 .BI \-v
 Prints version information to standard output, then exits.
 .SH COMMANDS
 .TP
-.BI /j " #channel "
+.B /j #channel
 Join a channel
 .TP
-.BI /l " #channel "
+.B /l #channel
 Leave a channel
 .TP
-.BI /m " #channel/user msg "
+.B /m #channel/user msg
 Write a message to #channel/user
 .TP
-.BI /s " #channel/user "
+.B /s #channel/user
 Set default channel/user
 .TP
-.BI /t " topic"
+.B /t topic
 Set the channel topic
 .TP
 Everything which is not a command will simply be posted into the channel or to
