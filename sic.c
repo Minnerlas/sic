@@ -1,9 +1,7 @@
-/*
- * (C)opyright MMV-MMVI Anselm R. Garbe <garbeam at gmail dot com>
+/* (C)opyright MMV-MMVI Anselm R. Garbe <garbeam at gmail dot com>
  * (C)opyright MMV-MMVI Nico Golde <nico at ngolde dot de>
  * See LICENSE file for license details.
  */
-
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -32,10 +30,10 @@ static int srv;
 static time_t trespond;
 
 static int
-getline(int fd, unsigned int len, char *buf)
-{
+getline(int fd, unsigned int len, char *buf) {
 	unsigned int i = 0;
 	char c;
+
 	do {
 		if(read(fd, &c, sizeof(char)) != sizeof(char))
 			return -1;
@@ -47,8 +45,7 @@ getline(int fd, unsigned int len, char *buf)
 }
 
 static void
-pout(char *channel, char *msg)
-{
+pout(char *channel, char *msg) {
 	static char timestr[18];
 	time_t t = time(0);
 
@@ -57,8 +54,7 @@ pout(char *channel, char *msg)
 }
 
 static void
-privmsg(char *channel, char *msg)
-{
+privmsg(char *channel, char *msg) {
 	snprintf(bufout, sizeof(bufout), "<%s> %s", nick, msg);
 	pout(channel, bufout);
 	snprintf(bufout, sizeof(bufout), "PRIVMSG %s :%s\r\n", channel, msg);
@@ -66,8 +62,7 @@ privmsg(char *channel, char *msg)
 }
 
 static void
-parsein(char *msg)
-{
+parsein(char *msg) {
 	char *p;
 
 	if(msg[0] == 0)
@@ -101,8 +96,7 @@ parsein(char *msg)
 }
 
 static unsigned int
-tokenize(char **result, unsigned int reslen, char *str, char delim)
-{
+tokenize(char **result, unsigned int reslen, char *str, char delim) {
 	char *p, *n;
 	unsigned int i = 0;
 
@@ -127,26 +121,25 @@ tokenize(char **result, unsigned int reslen, char *str, char delim)
 }
 
 static void
-parsesrv(char *msg)
-{
+parsesrv(char *msg) {
 	char *argv[Tlast], *cmd, *p;
 	int i;
+
 	if(!msg || !(*msg))
 		return;
 
 	for(i = 0; i < Tlast; i++)
 		argv[i] = NULL;
 
-	/*
-	   <bufout>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
-	   <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <server> ]
-	   <command>  ::= <letter> { <letter> } | <number> <number> <number>
-	   <SPACE>    ::= ' ' { ' ' }
-	   <params>   ::= <SPACE> [ ':' <trailing> | <middle> <params> ]
-	   <middle>   ::= <Any *non-empty* sequence of octets not including SPACE
-	   or NUL or CR or LF, the first of which may not be ':'>
-	   <trailing> ::= <Any, possibly *empty*, sequence of octets not including NUL or CR or LF>
-	   <crlf>     ::= CR LF
+	/* <bufout>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
+	 * <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <server> ]
+	 * <command>  ::= <letter> { <letter> } | <number> <number> <number>
+	 * <SPACE>    ::= ' ' { ' ' }
+	 * <params>   ::= <SPACE> [ ':' <trailing> | <middle> <params> ]
+	 * <middle>   ::= <Any *non-empty* sequence of octets not including SPACE
+	 * or NUL or CR or LF, the first of which may not be ':'>
+	 * <trailing> ::= <Any, possibly *empty*, sequence of octets not including NUL or CR or LF>
+	 * <crlf>     ::= CR LF
 	 */
 	if(msg[0] == ':') { /* check prefix */
 		p = strchr(msg, ' ');
@@ -160,29 +153,28 @@ parsesrv(char *msg)
 		}
 	} else
 		cmd = msg;
-
 	/* remove CRLFs */
 	for(p = cmd; p && *p != 0; p++)
 		if(*p == '\r' || *p == '\n')
 			*p = 0;
-
 	if((p = strchr(cmd, ':'))) {
 		*p = 0;
 		argv[Ttext] = ++p;
 	}
 	tokenize(&argv[Tcmd], Tlast - Tcmd, cmd, ' ');
-
-	if(!strncmp("PONG", argv[Tcmd], 5)) {
+	if(!strncmp("PONG", argv[Tcmd], 5))
 		return;
-	} else if(!strncmp("PING", argv[Tcmd], 5)) {
+	else if(!strncmp("PING", argv[Tcmd], 5)) {
 		snprintf(bufout, sizeof(bufout), "PONG %s\r\n", argv[Ttext]);
 		write(srv, bufout, strlen(bufout));
 		return;
-	} else if(!argv[Tnick] || !argv[Tuser]) {	/* server command */
+	}
+	else if(!argv[Tnick] || !argv[Tuser]) {	/* server command */
 		snprintf(bufout, sizeof(bufout), "%s", argv[Ttext] ? argv[Ttext] : "");
 		pout(server, bufout);
 		return;
-	} else if(!strncmp("ERROR", argv[Tcmd], 6))
+	}
+	else if(!strncmp("ERROR", argv[Tcmd], 6))
 		snprintf(bufout, sizeof(bufout), "-!- error %s",
 				argv[Ttext] ? argv[Ttext] : "unknown");
 	else if(!strncmp("JOIN", argv[Tcmd], 5)) {
@@ -194,10 +186,12 @@ parsesrv(char *msg)
 		argv[Tchan] = argv[Ttext];
 		snprintf(bufout, sizeof(bufout), "-!- %s(%s) has joined %s",
 				argv[Tnick], argv[Tuser], argv[Ttext]);
-	} else if(!strncmp("PART", argv[Tcmd], 5)) {
+	}
+	else if(!strncmp("PART", argv[Tcmd], 5)) {
 		snprintf(bufout, sizeof(bufout), "-!- %s(%s) has left %s",
 				argv[Tnick], argv[Tuser], argv[Tchan]);
-	} else if(!strncmp("MODE", argv[Tcmd], 5))
+	}
+	else if(!strncmp("MODE", argv[Tcmd], 5))
 		snprintf(bufout, sizeof(bufout), "-!- %s changed mode/%s -> %s %s",
 				argv[Tnick], argv[Tcmd + 1],
 				argv[Tcmd + 2], argv[Tcmd + 3]);
@@ -228,8 +222,7 @@ parsesrv(char *msg)
 }
 
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
 	int i;
 	struct timeval tv;
 	struct hostent *hp;
@@ -238,7 +231,7 @@ main(int argc, char *argv[])
 	fd_set rd;
 
 	nick = fullname = getenv("USER");
-	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++) {
+	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++)
 		switch (argv[i][1]) {
 		default:
 			fputs("usage: sic [-s server] [-p port] [-n nick]"
@@ -265,7 +258,6 @@ main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		}
-	}
 
 	/* init */
 	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -284,7 +276,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "sic: cannot connect server '%s'\n", server);
 		exit(EXIT_FAILURE);
 	}
-
 	/* login */
 	if(password)
 		snprintf(bufout, sizeof(bufout),
@@ -294,11 +285,11 @@ main(int argc, char *argv[])
 		snprintf(bufout, sizeof(bufout), "NICK %s\r\nUSER %s localhost %s :%s\r\n",
 				 nick, nick, server, fullname);
 	write(srv, bufout, strlen(bufout));
-
 	snprintf(ping, sizeof(ping), "PING %s\r\n", server);
 	channel[0] = 0;
 	setbuf(stdout, NULL); /* unbuffered stdout */
-	for(;;) {
+
+	for(;;) { /* main loop */
 		FD_ZERO(&rd);
 		FD_SET(0, &rd);
 		FD_SET(srv, &rd);
@@ -334,6 +325,5 @@ main(int argc, char *argv[])
 			parsein(bufin);
 		}
 	}
-
 	return 0;
 }
