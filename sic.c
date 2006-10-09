@@ -231,32 +231,25 @@ main(int argc, char *argv[]) {
 	fd_set rd;
 
 	nick = fullname = getenv("USER");
-	for(i = 1; (i < argc) && (argv[i][0] == '-'); i++)
-		switch (argv[i][1]) {
-		default:
+	for(i = 1; i < argc; i++)
+		if(!strncmp(argv[i], "-s", 3))
+			server = argv[++i];
+		else if(!strncmp(argv[i], "-p", 3))
+			port = (unsigned short)atoi(argv[++i]);
+		else if(!strncmp(argv[i], "-n", 3))
+			nick = argv[++i];
+		else if(!strncmp(argv[i], "-k", 3))
+			password = argv[++i];
+		else if(!strncmp(argv[i], "-f", 3))
+			fullname = argv[++i];
+		else if(!strncmp(argv[i], "-v", 3)) {
+			fputs("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
+			exit(EXIT_SUCCESS);
+		}
+		else {
 			fputs("usage: sic [-s server] [-p port] [-n nick]"
 					" [-k keyword] [-f fullname] [-v]\n", stderr);
 			exit(EXIT_FAILURE);
-			break;
-		case 's':
-			server = argv[++i];
-			break;
-		case 'p':
-			port = (unsigned short)atoi(argv[++i]);
-			break;
-		case 'n':
-			nick = argv[++i];
-			break;
-		case 'k':
-			password = argv[++i];
-			break;
-		case 'f':
-			fullname = argv[++i];
-			break;
-		case 'v':
-			fputs("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
-			exit(EXIT_SUCCESS);
-			break;
 		}
 
 	/* init */
