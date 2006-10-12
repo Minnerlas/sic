@@ -86,7 +86,7 @@ parsein(char *msg) {
 		return;
 	}
 	else if(!strncmp(msg + 1, "t ", 2)) {
-		if((p = strchr(&msg[3], ' '))
+		if((p = strchr(&msg[3], ' ')))
 			*(p++) = 0;
 		snprintf(bufout, sizeof(bufout), "TOPIC %s :%s\r\n", &msg[3], p);
 	}
