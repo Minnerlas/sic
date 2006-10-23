@@ -232,16 +232,21 @@ main(int argc, char *argv[]) {
 
 	nick = fullname = getenv("USER");
 	for(i = 1; i < argc; i++)
-		if(!strncmp(argv[i], "-s", 3))
-			server = argv[++i];
-		else if(!strncmp(argv[i], "-p", 3))
-			port = (unsigned short)atoi(argv[++i]);
-		else if(!strncmp(argv[i], "-n", 3))
-			nick = argv[++i];
-		else if(!strncmp(argv[i], "-k", 3))
-			password = argv[++i];
-		else if(!strncmp(argv[i], "-f", 3))
-			fullname = argv[++i];
+		if(!strncmp(argv[i], "-s", 3)) {
+			if(++i < argc) server = argv[i];
+		}
+		else if(!strncmp(argv[i], "-p", 3)) {
+			if(++i < argc) port = (unsigned short)atoi(argv[i]);
+		}
+		else if(!strncmp(argv[i], "-n", 3)) {
+			if(++i < argc) nick = argv[i];
+		}
+		else if(!strncmp(argv[i], "-k", 3)) {
+			if(++i < argc) password = argv[i];
+		}
+		else if(!strncmp(argv[i], "-f", 3)) {
+			if(++i < argc) fullname = argv[i];
+		}
 		else if(!strncmp(argv[i], "-v", 3)) {
 			fputs("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
 			exit(EXIT_SUCCESS);
