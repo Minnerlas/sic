@@ -49,7 +49,7 @@ pout(char *channel, char *msg) {
 	static char timestr[18];
 	time_t t = time(0);
 
-	strftime(timestr, sizeof(timestr), "%a %R", localtime(&t));
+	strftime(timestr, sizeof(timestr), "%F %R", localtime(&t));
 	fprintf(stdout, "%-8.8s: %s %s\n", channel, timestr, msg);
 }
 
