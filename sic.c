@@ -301,7 +301,7 @@ main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		} else if(i == 0) {
 			if(time(NULL) - trespond >= PINGTIMEOUT) {
-				pout(server, "-!- sic shutting down: parseing timeout");
+				pout(server, "-!- sic shutting down: parse timeout");
 				exit(EXIT_FAILURE);
 			}
 			write(srv, ping, strlen(ping));
