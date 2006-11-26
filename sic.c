@@ -49,15 +49,15 @@ pout(char *channel, char *msg) {
 	static char timestr[18];
 	time_t t = time(0);
 
-	strftime(timestr, sizeof(timestr), "%F %R", localtime(&t));
+	strftime(timestr, sizeof timestr, "%F %R", localtime(&t));
 	fprintf(stdout, "%-8.8s: %s %s\n", channel, timestr, msg);
 }
 
 static void
 privmsg(char *channel, char *msg) {
-	snprintf(bufout, sizeof(bufout), "<%s> %s", nick, msg);
+	snprintf(bufout, sizeof bufout, "<%s> %s", nick, msg);
 	pout(channel, bufout);
-	snprintf(bufout, sizeof(bufout), "PRIVMSG %s :%s\r\n", channel, msg);
+	snprintf(bufout, sizeof bufout, "PRIVMSG %s :%s\r\n", channel, msg);
 	write(srv, bufout, strlen(bufout));
 }
 
@@ -72,9 +72,9 @@ parsein(char *msg) {
 		return;
 	}
 	if(!strncmp(msg + 1, "j ", 2) && (msg[3] == '#'))
-		snprintf(bufout, sizeof(bufout), "JOIN %s\r\n", &msg[3]);
+		snprintf(bufout, sizeof bufout, "JOIN %s\r\n", &msg[3]);
 	else if(!strncmp(msg + 1, "l ", 2))
-		snprintf(bufout, sizeof(bufout), "PART %s :sic\r\n", &msg[3]);
+		snprintf(bufout, sizeof bufout, "PART %s :sic\r\n", &msg[3]);
 	else if(!strncmp(msg + 1, "m ", 2)) {
 		if((p = strchr(&msg[3], ' ')))
 			*(p++) = 0;
@@ -82,16 +82,16 @@ parsein(char *msg) {
 		return;
 	}
 	else if(!strncmp(msg + 1, "s ", 2)) {
-		strncpy(channel, &msg[3], sizeof(channel));
+		strncpy(channel, &msg[3], sizeof channel);
 		return;
 	}
 	else if(!strncmp(msg + 1, "t ", 2)) {
 		if((p = strchr(&msg[3], ' ')))
 			*(p++) = 0;
-		snprintf(bufout, sizeof(bufout), "TOPIC %s :%s\r\n", &msg[3], p);
+		snprintf(bufout, sizeof bufout, "TOPIC %s :%s\r\n", &msg[3], p);
 	}
 	else
-		snprintf(bufout, sizeof(bufout), "%s\r\n", &msg[1]);
+		snprintf(bufout, sizeof bufout, "%s\r\n", &msg[1]);
 	write(srv, bufout, strlen(bufout));
 }
 
@@ -165,17 +165,17 @@ parsesrv(char *msg) {
 	if(!strncmp("PONG", argv[Tcmd], 5))
 		return;
 	else if(!strncmp("PING", argv[Tcmd], 5)) {
-		snprintf(bufout, sizeof(bufout), "PONG %s\r\n", argv[Ttext]);
+		snprintf(bufout, sizeof bufout, "PONG %s\r\n", argv[Ttext]);
 		write(srv, bufout, strlen(bufout));
 		return;
 	}
 	else if(!argv[Tnick] || !argv[Tuser]) {	/* server command */
-		snprintf(bufout, sizeof(bufout), "%s", argv[Ttext] ? argv[Ttext] : "");
+		snprintf(bufout, sizeof bufout, "%s", argv[Ttext] ? argv[Ttext] : "");
 		pout(server, bufout);
 		return;
 	}
 	else if(!strncmp("ERROR", argv[Tcmd], 6))
-		snprintf(bufout, sizeof(bufout), "-!- error %s",
+		snprintf(bufout, sizeof bufout, "-!- error %s",
 				argv[Ttext] ? argv[Ttext] : "unknown");
 	else if(!strncmp("JOIN", argv[Tcmd], 5)) {
 		if(argv[Ttext]!=NULL){
@@ -184,36 +184,36 @@ parsesrv(char *msg) {
 			*p = 0;
 		}
 		argv[Tchan] = argv[Ttext];
-		snprintf(bufout, sizeof(bufout), "-!- %s(%s) has joined %s",
+		snprintf(bufout, sizeof bufout, "-!- %s(%s) has joined %s",
 				argv[Tnick], argv[Tuser], argv[Ttext]);
 	}
 	else if(!strncmp("PART", argv[Tcmd], 5)) {
-		snprintf(bufout, sizeof(bufout), "-!- %s(%s) has left %s",
+		snprintf(bufout, sizeof bufout, "-!- %s(%s) has left %s",
 				argv[Tnick], argv[Tuser], argv[Tchan]);
 	}
 	else if(!strncmp("MODE", argv[Tcmd], 5))
-		snprintf(bufout, sizeof(bufout), "-!- %s changed mode/%s -> %s %s",
+		snprintf(bufout, sizeof bufout, "-!- %s changed mode/%s -> %s %s",
 				argv[Tnick], argv[Tcmd + 1],
 				argv[Tcmd + 2], argv[Tcmd + 3]);
 	else if(!strncmp("QUIT", argv[Tcmd], 5))
-		snprintf(bufout, sizeof(bufout), "-!- %s(%s) has quit \"%s\"",
+		snprintf(bufout, sizeof bufout, "-!- %s(%s) has quit \"%s\"",
 				argv[Tnick], argv[Tuser],
 				argv[Ttext] ? argv[Ttext] : "");
 	else if(!strncmp("NICK", argv[Tcmd], 5))
-		snprintf(bufout, sizeof(bufout), "-!- %s changed nick to %s",
+		snprintf(bufout, sizeof bufout, "-!- %s changed nick to %s",
 				argv[Tnick], argv[Ttext]);
 	else if(!strncmp("TOPIC", argv[Tcmd], 6))
-		snprintf(bufout, sizeof(bufout), "-!- %s changed topic to \"%s\"",
+		snprintf(bufout, sizeof bufout, "-!- %s changed topic to \"%s\"",
 				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
 	else if(!strncmp("KICK", argv[Tcmd], 5))
-		snprintf(bufout, sizeof(bufout), "-!- %s kicked %s (\"%s\")",
+		snprintf(bufout, sizeof bufout, "-!- %s kicked %s (\"%s\")",
 				argv[Tnick], argv[Targ],
 				argv[Ttext] ? argv[Ttext] : "");
 	else if(!strncmp("NOTICE", argv[Tcmd], 7))
-		snprintf(bufout, sizeof(bufout), "-!- \"%s\")",
+		snprintf(bufout, sizeof bufout, "-!- \"%s\")",
 				argv[Ttext] ? argv[Ttext] : "");
 	else if(!strncmp("PRIVMSG", argv[Tcmd], 8))
-		snprintf(bufout, sizeof(bufout), "<%s> %s",
+		snprintf(bufout, sizeof bufout, "<%s> %s",
 				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
 	if(!argv[Tchan] || !strncmp(argv[Tchan], nick, strlen(nick)))
 		pout(argv[Tnick], bufout);
@@ -276,14 +276,14 @@ main(int argc, char *argv[]) {
 	}
 	/* login */
 	if(password)
-		snprintf(bufout, sizeof(bufout),
+		snprintf(bufout, sizeof bufout,
 				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
 				password, nick, nick, server, fullname);
 	else
-		snprintf(bufout, sizeof(bufout), "NICK %s\r\nUSER %s localhost %s :%s\r\n",
+		snprintf(bufout, sizeof bufout, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
 				 nick, nick, server, fullname);
 	write(srv, bufout, strlen(bufout));
-	snprintf(ping, sizeof(ping), "PING %s\r\n", server);
+	snprintf(ping, sizeof ping, "PING %s\r\n", server);
 	channel[0] = 0;
 	setbuf(stdout, NULL); /* unbuffered stdout */
 
@@ -308,7 +308,7 @@ main(int argc, char *argv[]) {
 			continue;
 		}
 		if(FD_ISSET(srv, &rd)) {
-			if(getline(srv, sizeof(bufin), bufin) == -1) {
+			if(getline(srv, sizeof bufin, bufin) == -1) {
 				perror("sic: remote server closed connection");
 				exit(EXIT_FAILURE);
 			}
@@ -316,7 +316,7 @@ main(int argc, char *argv[]) {
 			trespond = time(NULL);
 		}
 		if(FD_ISSET(0, &rd)) {
-			if(getline(0, sizeof(bufin), bufin) == -1) {
+			if(getline(0, sizeof bufin, bufin) == -1) {
 				perror("sic: broken pipe");
 				exit(EXIT_FAILURE);
 			}
