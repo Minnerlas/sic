@@ -142,7 +142,8 @@ parsesrv(char *msg) {
 	 * <crlf>     ::= CR LF
 	 */
 	if(msg[0] == ':') { /* check prefix */
-		p = strchr(msg, ' ');
+		if (!(p = strchr(msg, ' ')))
+			return;
 		*p = 0;
 		for(++p; *p == ' '; p++);
 		cmd = p;
@@ -162,7 +163,7 @@ parsesrv(char *msg) {
 		argv[Ttext] = ++p;
 	}
 	tokenize(&argv[Tcmd], Tlast - Tcmd, cmd, ' ');
-	if(!strncmp("PONG", argv[Tcmd], 5))
+	if(!argv[Tcmd] || !strncmp("PONG", argv[Tcmd], 5))
 		return;
 	else if(!strncmp("PING", argv[Tcmd], 5)) {
 		snprintf(bufout, sizeof bufout, "PONG %s\r\n", argv[Ttext]);
