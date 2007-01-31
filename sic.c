@@ -194,8 +194,9 @@ parsesrv(char *msg) {
 	}
 	else if(!strncmp("MODE", argv[Tcmd], 5))
 		snprintf(bufout, sizeof bufout, "-!- %s changed mode/%s -> %s %s",
-				argv[Tnick], argv[Tcmd + 1],
-				argv[Tcmd + 2], argv[Tcmd + 3]);
+				argv[Tnick], argv[Tcmd + 1] ? argv[Tcmd + 1] : "",
+				argv[Tcmd + 2] ? argv[Tcmd + 2] : "",
+				argv[Tcmd + 3] ? argv[Tcmd + 3] : "");
 	else if(!strncmp("QUIT", argv[Tcmd], 5))
 		snprintf(bufout, sizeof bufout, "-!- %s(%s) has quit \"%s\"",
 				argv[Tnick], argv[Tuser],
