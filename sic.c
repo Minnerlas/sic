@@ -67,14 +67,14 @@ parsein(char *msg) {
 
 	if(msg[0] == 0)
 		return;
-	if(msg[0] != '/') {
+	if(msg[0] != ':') {
 		privmsg(channel, msg);
 		return;
 	}
 	if(!strncmp(msg + 1, "j ", 2) && (msg[3] == '#'))
 		snprintf(bufout, sizeof bufout, "JOIN %s\r\n", &msg[3]);
 	else if(!strncmp(msg + 1, "l ", 2))
-		snprintf(bufout, sizeof bufout, "PART %s :sic\r\n", &msg[3]);
+		snprintf(bufout, sizeof bufout, "PART %s :sic - 300 LOC are too much!\r\n", &msg[3]);
 	else if(!strncmp(msg + 1, "m ", 2)) {
 		if((p = strchr(&msg[3], ' ')))
 			*(p++) = 0;
@@ -127,10 +127,8 @@ parsesrv(char *msg) {
 
 	if(!msg || !(*msg))
 		return;
-
 	for(i = 0; i < Tlast; i++)
 		argv[i] = NULL;
-
 	/* <bufout>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
 	 * <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <server> ]
 	 * <command>  ::= <letter> { <letter> } | <number> <number> <number>
