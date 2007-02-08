@@ -53,6 +53,8 @@ pout(char *channel, char *msg) {
 
 static void
 privmsg(char *channel, char *msg) {
+	if(channel[0] == 0)
+		return;
 	snprintf(bufout, sizeof bufout, "<%s> %s", nick, msg);
 	pout(channel, bufout);
 	snprintf(bufout, sizeof bufout, "PRIVMSG %s :%s\r\n", channel, msg);
