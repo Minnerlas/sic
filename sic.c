@@ -105,15 +105,14 @@ parsesrv(char *msg) {
 		if(!(p = strchr(msg, ' ')))
 			return;
 		*p = 0;
-		for(++p; *p == ' '; p++);
-		cmd = p;
 		usr = &msg[1];
-		if((p = strchr(msg, '!')))
+		cmd = ++p;
+		if((p = strchr(usr, '!')))
 			*p = 0;
 	} else
 		cmd = msg;
 	/* remove CRLFs */
-	for(p = cmd; p && *p != 0; p++)
+	for(p = cmd; *p; p++)
 		if(*p == '\r' || *p == '\n')
 			*p = 0;
 	if(!strncmp("PONG", cmd, 4))
