@@ -101,6 +101,7 @@ parsesrv(char *msg) {
 
 	if(!msg || !(*msg))
 		return;
+	pout("debug", msg);
 	if(msg[0] == ':') { /* check prefix */
 		if(!(p = strchr(msg, ' ')))
 			return;
