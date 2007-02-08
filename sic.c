@@ -16,8 +16,6 @@
 #define PINGTIMEOUT 300
 #define MAXMSG 4096
 
-enum { Tnick, Tuser, Tcmd, Tchan, Targ, Ttext, Tlast };
-
 static char *server = "irc.oftc.net";
 static unsigned short port = 6667;
 static char *nick = NULL;
@@ -95,82 +93,46 @@ parsein(char *msg) {
 	write(srv, bufout, strlen(bufout));
 }
 
-static unsigned int
-tokenize(char **result, unsigned int reslen, char *str, char delim) {
-	char *p, *n;
-	unsigned int i = 0;
-
-	if(!str)
-		return 0;
-	for(n = str; *n == delim; n++);
-	p = n;
-	for(i = 0; *n != 0;) {
-		if(i == reslen)
-			return i;
-		if(*n == delim) {
-			*n = 0;
-			if(strlen(p))
-				result[i++] = p;
-			p = ++n;
-		} else
-			n++;
-	}
-	if((i < reslen) && (p < n) && strlen(p))
-		result[i++] = p;
-	return i;	/* number of tokens */
-}
-
 static void
 parsesrv(char *msg) {
-	char *argv[Tlast], *cmd, *p;
-	int i;
+	char *chan, *cmd, *p, *txt, *usr; 
 
 	if(!msg || !(*msg))
 		return;
-	for(i = 0; i < Tlast; i++)
-		argv[i] = NULL;
-	/* <bufout>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
-	 * <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <server> ]
-	 * <command>  ::= <letter> { <letter> } | <number> <number> <number>
-	 * <SPACE>    ::= ' ' { ' ' }
-	 * <params>   ::= <SPACE> [ ':' <trailing> | <middle> <params> ]
-	 * <middle>   ::= <Any *non-empty* sequence of octets not including SPACE
-	 * or NUL or CR or LF, the first of which may not be ':'>
-	 * <trailing> ::= <Any, possibly *empty*, sequence of octets not including NUL or CR or LF>
-	 * <crlf>     ::= CR LF
-	 */
 	if(msg[0] == ':') { /* check prefix */
-		if (!(p = strchr(msg, ' ')))
+		if(!(p = strchr(msg, ' ')))
 			return;
 		*p = 0;
 		for(++p; *p == ' '; p++);
 		cmd = p;
-		argv[Tnick] = &msg[1];
-		if((p = strchr(msg, '!'))) {
+		usr = &msg[1];
+		if((p = strchr(msg, '!')))
 			*p = 0;
-			argv[Tuser] = ++p;
-		}
 	} else
 		cmd = msg;
 	/* remove CRLFs */
 	for(p = cmd; p && *p != 0; p++)
 		if(*p == '\r' || *p == '\n')
 			*p = 0;
-	if((p = strchr(cmd, ':'))) {
-		*p = 0;
-		argv[Ttext] = ++p;
-	}
-
+	if(!strncmp("PONG", cmd, 4))
+		return;
 	if(!strncmp("PRIVMSG", cmd, 7) || !strncmp("PING", cmd, 4)) {
-		if(tokenize(&argv[Tcmd], Tlast - Tcmd, cmd, ' ') != Tlast - Tcmd)
+		if(!(p = strchr(cmd, ' ')))
 			return;
-		if(!strncmp("PRIVMSG", argv[Tcmd], 8)) {
-			snprintf(bufout, sizeof bufout, "<%s> %s",
-					argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
-			pout(argv[Tchan], bufout);
+		*p = 0;
+		chan = ++p;
+		for(; *p && *p != ' '; p++);
+		*p = 0;
+		if(!(p = strchr(++p, ':')))
+			return;
+		*p = 0;
+		txt = ++p;
+		if(!strncmp("PRIVMSG", cmd, 8) && chan && txt) {
+			snprintf(bufout, sizeof bufout, "<%s> %s", usr, txt);
+			pout(chan, bufout);
 		}
-		else if(!strncmp("PING", argv[Tcmd], 5)) {
-			snprintf(bufout, sizeof bufout, "PONG %s\r\n", argv[Ttext]);
+		else if(!strncmp("PING", cmd, 5) && txt) {
+			snprintf(bufout, sizeof bufout, "PONG %s\r\n", txt);
 			write(srv, bufout, strlen(bufout));
 		}
 		return;
