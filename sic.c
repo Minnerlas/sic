@@ -16,7 +16,7 @@
 #define PINGTIMEOUT 300
 #define MAXMSG 4096
 
-static char *server = "irc.oftc.net";
+static char *host = "irc.oftc.net";
 static unsigned short port = 6667;
 static char *nick = NULL;
 static char *fullname = NULL;
@@ -140,7 +140,7 @@ parsesrv(char *msg) {
 		return;
 	}
 	snprintf(bufout, sizeof bufout, "-!- %s", cmd);
-	pout(server, bufout);
+	pout(host, bufout);
 }
 
 int
@@ -154,8 +154,8 @@ main(int argc, char *argv[]) {
 
 	nick = fullname = getenv("USER");
 	for(i = 1; i < argc; i++)
-		if(!strncmp(argv[i], "-s", 3)) {
-			if(++i < argc) server = argv[i];
+		if(!strncmp(argv[i], "-h", 3)) {
+			if(++i < argc) host = argv[i];
 		}
 		else if(!strncmp(argv[i], "-p", 3)) {
 			if(++i < argc) port = (unsigned short)atoi(argv[i]);
@@ -174,18 +174,18 @@ main(int argc, char *argv[]) {
 			exit(EXIT_SUCCESS);
 		}
 		else {
-			fputs("usage: sic [-s server] [-p port] [-n nick]"
+			fputs("usage: sic [-h host] [-p port] [-n nick]"
 					" [-k keyword] [-f fullname] [-v]\n", stderr);
 			exit(EXIT_FAILURE);
 		}
 
 	/* init */
 	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		fprintf(stderr, "sic: cannot connect server '%s'\n", server);
+		fprintf(stderr, "sic: cannot connect host '%s'\n", host);
 		exit(EXIT_FAILURE);
 	}
-	if (NULL == (hp = gethostbyname(server))) {
-		fprintf(stderr, "sic: cannot resolve hostname '%s'\n", server);
+	if (NULL == (hp = gethostbyname(host))) {
+		fprintf(stderr, "sic: cannot resolve hostname '%s'\n", host);
 		exit(EXIT_FAILURE);
 	}
 	addr.sin_family = AF_INET;
@@ -193,19 +193,19 @@ main(int argc, char *argv[]) {
 	memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
 	if(connect(srv, (struct sockaddr *) &addr, sizeof(struct sockaddr_in))) {
 		close(srv);
-		fprintf(stderr, "sic: cannot connect server '%s'\n", server);
+		fprintf(stderr, "sic: cannot connect host '%s'\n", host);
 		exit(EXIT_FAILURE);
 	}
 	/* login */
 	if(password)
 		snprintf(bufout, sizeof bufout,
 				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
-				password, nick, nick, server, fullname);
+				password, nick, nick, host, fullname);
 	else
 		snprintf(bufout, sizeof bufout, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
-				 nick, nick, server, fullname);
+				 nick, nick, host, fullname);
 	write(srv, bufout, strlen(bufout));
-	snprintf(ping, sizeof ping, "PING %s\r\n", server);
+	snprintf(ping, sizeof ping, "PING %s\r\n", host);
 	channel[0] = 0;
 	setbuf(stdout, NULL); /* unbuffered stdout */
 
@@ -223,7 +223,7 @@ main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		} else if(i == 0) {
 			if(time(NULL) - trespond >= PINGTIMEOUT) {
-				pout(server, "-!- sic shutting down: parse timeout");
+				pout(host, "-!- sic shutting down: parse timeout");
 				exit(EXIT_FAILURE);
 			}
 			write(srv, ping, strlen(ping));
@@ -231,7 +231,7 @@ main(int argc, char *argv[]) {
 		}
 		if(FD_ISSET(srv, &rd)) {
 			if(getline(srv, sizeof bufin, bufin) == -1) {
-				perror("sic: remote server closed connection");
+				perror("sic: remote host closed connection");
 				exit(EXIT_FAILURE);
 			}
 			parsesrv(bufin);
