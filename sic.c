@@ -160,65 +160,23 @@ parsesrv(char *msg) {
 		*p = 0;
 		argv[Ttext] = ++p;
 	}
-	tokenize(&argv[Tcmd], Tlast - Tcmd, cmd, ' ');
-	if(!argv[Tcmd] || !strncmp("PONG", argv[Tcmd], 5))
-		return;
-	else if(!strncmp("PING", argv[Tcmd], 5)) {
-		snprintf(bufout, sizeof bufout, "PONG %s\r\n", argv[Ttext]);
-		write(srv, bufout, strlen(bufout));
-		return;
-	}
-	else if(!argv[Tnick] || !argv[Tuser]) {	/* server command */
-		snprintf(bufout, sizeof bufout, "%s", argv[Ttext] ? argv[Ttext] : "");
-		pout(server, bufout);
-		return;
-	}
-	else if(!strncmp("ERROR", argv[Tcmd], 6))
-		snprintf(bufout, sizeof bufout, "-!- error %s",
-				argv[Ttext] ? argv[Ttext] : "unknown");
-	else if(!strncmp("JOIN", argv[Tcmd], 5)) {
-		if(argv[Ttext]!=NULL){
-			p = strchr(argv[Ttext], ' ');
-		if(p)
-			*p = 0;
+
+	if(!strncmp("PRIVMSG", cmd, 7) || !strncmp("PING", cmd, 4)) {
+		if(tokenize(&argv[Tcmd], Tlast - Tcmd, cmd, ' ') != Tlast - Tcmd)
+			return;
+		if(!strncmp("PRIVMSG", argv[Tcmd], 8)) {
+			snprintf(bufout, sizeof bufout, "<%s> %s",
+					argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
+			pout(argv[Tchan], bufout);
 		}
-		argv[Tchan] = argv[Ttext];
-		snprintf(bufout, sizeof bufout, "-!- %s(%s) has joined %s",
-				argv[Tnick], argv[Tuser], argv[Ttext]);
+		else if(!strncmp("PING", argv[Tcmd], 5)) {
+			snprintf(bufout, sizeof bufout, "PONG %s\r\n", argv[Ttext]);
+			write(srv, bufout, strlen(bufout));
+		}
+		return;
 	}
-	else if(!strncmp("PART", argv[Tcmd], 5)) {
-		snprintf(bufout, sizeof bufout, "-!- %s(%s) has left %s",
-				argv[Tnick], argv[Tuser], argv[Tchan]);
-	}
-	else if(!strncmp("MODE", argv[Tcmd], 5))
-		snprintf(bufout, sizeof bufout, "-!- %s changed mode/%s -> %s %s",
-				argv[Tnick], argv[Tcmd + 1] ? argv[Tcmd + 1] : "",
-				argv[Tcmd + 2] ? argv[Tcmd + 2] : "",
-				argv[Tcmd + 3] ? argv[Tcmd + 3] : "");
-	else if(!strncmp("QUIT", argv[Tcmd], 5))
-		snprintf(bufout, sizeof bufout, "-!- %s(%s) has quit \"%s\"",
-				argv[Tnick], argv[Tuser],
-				argv[Ttext] ? argv[Ttext] : "");
-	else if(!strncmp("NICK", argv[Tcmd], 5))
-		snprintf(bufout, sizeof bufout, "-!- %s changed nick to %s",
-				argv[Tnick], argv[Ttext]);
-	else if(!strncmp("TOPIC", argv[Tcmd], 6))
-		snprintf(bufout, sizeof bufout, "-!- %s changed topic to \"%s\"",
-				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
-	else if(!strncmp("KICK", argv[Tcmd], 5))
-		snprintf(bufout, sizeof bufout, "-!- %s kicked %s (\"%s\")",
-				argv[Tnick], argv[Targ],
-				argv[Ttext] ? argv[Ttext] : "");
-	else if(!strncmp("NOTICE", argv[Tcmd], 7))
-		snprintf(bufout, sizeof bufout, "-!- \"%s\")",
-				argv[Ttext] ? argv[Ttext] : "");
-	else if(!strncmp("PRIVMSG", argv[Tcmd], 8))
-		snprintf(bufout, sizeof bufout, "<%s> %s",
-				argv[Tnick], argv[Ttext] ? argv[Ttext] : "");
-	if(!argv[Tchan] || !strncmp(argv[Tchan], nick, strlen(nick)))
-		pout(argv[Tnick], bufout);
-	else
-		pout(argv[Tchan], bufout);
+	snprintf(bufout, sizeof bufout, "-!- %s", cmd);
+	pout(server, bufout);
 }
 
 int
