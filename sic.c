@@ -74,7 +74,7 @@ parsein(char *msg) {
 	if(!strncmp(msg + 1, "j ", 2) && (msg[3] == '#'))
 		snprintf(bufout, sizeof bufout, "JOIN %s\r\n", &msg[3]);
 	else if(!strncmp(msg + 1, "l ", 2))
-		snprintf(bufout, sizeof bufout, "PART %s :sic - 300 LOC are too much!\r\n", &msg[3]);
+		snprintf(bufout, sizeof bufout, "PART %s :sic - 250 LOC are too much!\r\n", &msg[3]);
 	else if(!strncmp(msg + 1, "m ", 2)) {
 		if((p = strchr(&msg[3], ' ')))
 			*(p++) = 0;
