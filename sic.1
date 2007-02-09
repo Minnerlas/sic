@@ -3,7 +3,7 @@
 sic \- simple irc client
 .SH SYNOPSIS
 .B sic
-.RB [ \-s " <server>"]
+.RB [ \-h " <host>"]
 .RB [ \-p " <port>"]
 .RB [ \-n " <nick>"]
 .RB [ \-k " <keyword>"]
@@ -16,8 +16,8 @@ also all channel traffic into one output, that you don't have to switch
 different channel buffers, that's actually a feature.
 .SH OPTIONS
 .TP
-.B \-s <server>
-Overrides the default server (irc.oftc.net)
+.B \-h <host>
+Overrides the default host (irc.oftc.net)
 .TP
 .B \-p <port>
 Overrides the default port (6667)
@@ -26,7 +26,7 @@ Overrides the default port (6667)
 Override the default nick ($USER)
 .TP
 .B \-k <keyword>
-Specifies the keyword to authenticate your nick on the server
+Specifies the keyword to authenticate your nick on the host
 .TP
 .BI \-v
 Prints version information to standard output, then exits.
@@ -47,5 +47,4 @@ Set default channel/user
 .B :t #channel topic
 Set the channel topic
 .TP
-Everything which is not a command will simply be posted into the channel or to
-the server.
+Everything which is not a command is simply send the server.
