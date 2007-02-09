@@ -135,7 +135,7 @@ parsesrv(char *msg) {
 		write(srv, bufout, strlen(bufout));
 	}
 	else {
-		snprintf(bufout, sizeof bufout, "-!- %s: %s", cmd, txt ? txt : "");
+		snprintf(bufout, sizeof bufout, ">< %s: %s", cmd, txt ? txt : "");
 		pout(usr, bufout);
 	}
 }
