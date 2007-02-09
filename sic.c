@@ -72,26 +72,26 @@ parsein(char *msg) {
 		return;
 	}
 	if(!strncmp(msg + 1, "j ", 2) && (msg[3] == '#'))
-		snprintf(bufout, sizeof bufout, "JOIN %s\r\n", &msg[3]);
+		snprintf(bufout, sizeof bufout, "JOIN %s\r\n", msg + 3);
 	else if(!strncmp(msg + 1, "l ", 2))
-		snprintf(bufout, sizeof bufout, "PART %s :sic - 250 LOC are too much!\r\n", &msg[3]);
+		snprintf(bufout, sizeof bufout, "PART %s :sic - 250 LOC are too much!\r\n", msg + 3);
 	else if(!strncmp(msg + 1, "m ", 2)) {
-		if((p = strchr(&msg[3], ' ')))
+		if((p = strchr(msg + 3, ' ')))
 			*(p++) = 0;
-		privmsg(&msg[3], p);
+		privmsg(msg + 3, p);
 		return;
 	}
 	else if(!strncmp(msg + 1, "s ", 2)) {
-		strncpy(channel, &msg[3], sizeof channel);
+		strncpy(channel, msg + 3, sizeof channel);
 		return;
 	}
 	else if(!strncmp(msg + 1, "t ", 2)) {
-		if((p = strchr(&msg[3], ' ')))
+		if((p = strchr(msg + 3, ' ')))
 			*(p++) = 0;
-		snprintf(bufout, sizeof bufout, "TOPIC %s :%s\r\n", &msg[3], p);
+		snprintf(bufout, sizeof bufout, "TOPIC %s :%s\r\n", msg + 3, p);
 	}
 	else
-		snprintf(bufout, sizeof bufout, "%s\r\n", &msg[1]);
+		snprintf(bufout, sizeof bufout, "%s\r\n", msg + 1);
 	write(srv, bufout, strlen(bufout));
 }
 
@@ -106,7 +106,7 @@ parsesrv(char *msg) {
 		return; /* don't handle prefix-less server commands */
 	if(!(p = strchr(msg, ' ')))
 		return;
-	usr = &msg[1];
+	usr = msg + 1;
 	*p = 0;
 	cmd = ++p;
 	if((p = strchr(usr, '!')))
