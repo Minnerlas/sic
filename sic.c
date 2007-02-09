@@ -47,8 +47,8 @@ pout(char *channel, char *msg) {
 	static char timestr[18];
 	time_t t = time(0);
 
-	strftime(timestr, sizeof timestr, "%F %R", localtime(&t));
-	fprintf(stdout, "%-8.8s: %s %s\n", channel, timestr, msg);
+	strftime(timestr, sizeof timestr, "%D %R", localtime(&t));
+	fprintf(stdout, "%-12.12s: %s %s\n", channel, timestr, msg);
 }
 
 static void
@@ -99,6 +99,7 @@ static void
 parsesrv(char *msg) {
 	char *chan, *cmd, *p, *txt, *usr; 
 
+	txt = NULL;
 	if(!msg || !(*msg))
 		return;
 	pout("debug", msg);
@@ -111,14 +112,13 @@ parsesrv(char *msg) {
 	cmd = ++p;
 	if((p = strchr(usr, '!')))
 		*p = 0;
-	/* remove CRLFs */
-	if(!(p = strchr(cmd, ':')))
-		return;
-	*p = 0;
-	txt = ++p;
-	for(p = txt; *p; p++)
+	for(p = cmd; *p; p++) /* remove CRLFs */
 		if(*p == '\r' || *p == '\n')
 			*p = 0;
+	if((p = strchr(cmd, ':'))) {
+		*p = 0;
+		txt = ++p;
+	}
 	if(!strncmp("PONG", cmd, 4))
 		return;
 	if(!strncmp("PRIVMSG", cmd, 7) && txt) {
