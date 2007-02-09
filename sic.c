@@ -121,7 +121,7 @@ parsesrv(char *msg) {
 			*p = 0;
 	if(!strncmp("PONG", cmd, 4))
 		return;
-	if(!strncmp("PRIVMSG", cmd, 7)) {
+	if(!strncmp("PRIVMSG", cmd, 7) && txt) {
 		if(!(p = strchr(cmd, ' ')))
 			return;
 		*p = 0;
@@ -136,7 +136,7 @@ parsesrv(char *msg) {
 		write(srv, bufout, strlen(bufout));
 	}
 	else {
-		snprintf(bufout, sizeof bufout, "-!- %s", cmd);
+		snprintf(bufout, sizeof bufout, "-!- %s: %s", cmd, txt ? txt : "");
 		pout(usr, bufout);
 	}
 }
