@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +27,16 @@ static char bufin[MAXMSG], bufout[MAXMSG];
 static char channel[256];
 static int srv;
 static time_t trespond;
+
+static void
+eprint(const char *errstr, ...) {
+	va_list ap;
+
+	va_start(ap, errstr);
+	vfprintf(stderr, errstr, ap);
+	va_end(ap);
+	exit(EXIT_FAILURE);
+}
 
 static int
 getline(int fd, unsigned int len, char *buf) {
@@ -166,32 +177,23 @@ main(int argc, char *argv[]) {
 		else if(!strncmp(argv[i], "-f", 3)) {
 			if(++i < argc) fullname = argv[i];
 		}
-		else if(!strncmp(argv[i], "-v", 3)) {
-			fputs("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n", stdout);
-			exit(EXIT_SUCCESS);
-		}
-		else {
-			fputs("usage: sic [-h host] [-p port] [-n nick]"
-					" [-k keyword] [-f fullname] [-v]\n", stderr);
-			exit(EXIT_FAILURE);
-		}
+		else if(!strncmp(argv[i], "-v", 3))
+			eprint("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n");
+		else
+			eprint("usage: sic [-h host] [-p port] [-n nick]"
+				" [-k keyword] [-f fullname] [-v]\n");
 
 	/* init */
-	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		fprintf(stderr, "sic: cannot connect host '%s'\n", host);
-		exit(EXIT_FAILURE);
-	}
-	if (NULL == (hp = gethostbyname(host))) {
-		fprintf(stderr, "sic: cannot resolve hostname '%s'\n", host);
-		exit(EXIT_FAILURE);
-	}
+	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		eprint("sic: cannot connect host '%s'\n", host);
+	if(NULL == (hp = gethostbyname(host)))
+		eprint("sic: cannot resolve hostname '%s'\n", host);
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
 	if(connect(srv, (struct sockaddr *) &addr, sizeof(struct sockaddr_in))) {
 		close(srv);
-		fprintf(stderr, "sic: cannot connect host '%s'\n", host);
-		exit(EXIT_FAILURE);
+		eprint("sic: cannot connect host '%s'\n", host);
 	}
 	/* login */
 	if(password)
@@ -216,29 +218,23 @@ main(int argc, char *argv[]) {
 		if(i < 0) {
 			if(errno == EINTR)
 				continue;
-			perror("sic: error on select()");
-			exit(EXIT_FAILURE);
-		} else if(i == 0) {
-			if(time(NULL) - trespond >= PINGTIMEOUT) {
-				pout(host, "-!- sic shutting down: parse timeout");
-				exit(EXIT_FAILURE);
-			}
+			eprint("sic: error on select()");
+		}
+		else if(i == 0) {
+			if(time(NULL) - trespond >= PINGTIMEOUT)
+				eprint("sic shutting down: parse timeout");
 			write(srv, ping, strlen(ping));
 			continue;
 		}
 		if(FD_ISSET(srv, &rd)) {
-			if(getline(srv, sizeof bufin, bufin) == -1) {
-				perror("sic: remote host closed connection");
-				exit(EXIT_FAILURE);
-			}
+			if(getline(srv, sizeof bufin, bufin) == -1)
+				eprint("sic: remote host closed connection");
 			parsesrv(bufin);
 			trespond = time(NULL);
 		}
 		if(FD_ISSET(0, &rd)) {
-			if(getline(0, sizeof bufin, bufin) == -1) {
-				perror("sic: broken pipe");
-				exit(EXIT_FAILURE);
-			}
+			if(getline(0, sizeof bufin, bufin) == -1)
+				eprint("sic: broken pipe");
 			parsein(bufin);
 		}
 	}
