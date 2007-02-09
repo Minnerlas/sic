@@ -102,7 +102,6 @@ parsesrv(char *msg) {
 	txt = NULL;
 	if(!msg || !(*msg))
 		return;
-	pout("debug", msg);
 	if(msg[0] != ':')
 		return; /* don't handle prefix-less server commands */
 	if(!(p = strchr(msg, ' ')))
