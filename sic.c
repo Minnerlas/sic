@@ -102,45 +102,43 @@ parsesrv(char *msg) {
 	if(!msg || !(*msg))
 		return;
 	pout("debug", msg);
-	if(msg[0] == ':') { /* check prefix */
-		if(!(p = strchr(msg, ' ')))
-			return;
+	if(msg[0] != ':')
+		return; /* don't handle prefix-less server commands */
+	if(!(p = strchr(msg, ' ')))
+		return;
+	usr = &msg[1];
+	*p = 0;
+	cmd = ++p;
+	if((p = strchr(usr, '!')))
 		*p = 0;
-		usr = &msg[1];
-		cmd = ++p;
-		if((p = strchr(usr, '!')))
-			*p = 0;
-	} else
-		cmd = msg;
 	/* remove CRLFs */
-	for(p = cmd; *p; p++)
+	if(!(p = strchr(cmd, ':')))
+		return;
+	*p = 0;
+	txt = ++p;
+	for(p = txt; *p; p++)
 		if(*p == '\r' || *p == '\n')
 			*p = 0;
 	if(!strncmp("PONG", cmd, 4))
 		return;
-	if(!strncmp("PRIVMSG", cmd, 7) || !strncmp("PING", cmd, 4)) {
+	if(!strncmp("PRIVMSG", cmd, 7)) {
 		if(!(p = strchr(cmd, ' ')))
 			return;
 		*p = 0;
 		chan = ++p;
 		for(; *p && *p != ' '; p++);
 		*p = 0;
-		if(!(p = strchr(++p, ':')))
-			return;
-		*p = 0;
-		txt = ++p;
-		if(!strncmp("PRIVMSG", cmd, 8) && chan && txt) {
-			snprintf(bufout, sizeof bufout, "<%s> %s", usr, txt);
-			pout(chan, bufout);
-		}
-		else if(!strncmp("PING", cmd, 5) && txt) {
-			snprintf(bufout, sizeof bufout, "PONG %s\r\n", txt);
-			write(srv, bufout, strlen(bufout));
-		}
-		return;
+		snprintf(bufout, sizeof bufout, "<%s> %s", usr, txt);
+		pout(chan, bufout);
 	}
-	snprintf(bufout, sizeof bufout, "-!- %s", cmd);
-	pout(host, bufout);
+	else if(!strncmp("PING", cmd, 4) && txt) {
+		snprintf(bufout, sizeof bufout, "PONG %s\r\n", txt);
+		write(srv, bufout, strlen(bufout));
+	}
+	else {
+		snprintf(bufout, sizeof bufout, "-!- %s", cmd);
+		pout(usr, bufout);
+	}
 }
 
 int
