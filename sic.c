@@ -19,9 +19,8 @@
 
 static char *host = "irc.oftc.net";
 static unsigned short port = 6667;
-static char *nick = NULL;
-static char *fullname = NULL;
 static char *password = NULL;
+static char nick[32];
 
 static char bufin[MAXMSG], bufout[MAXMSG];
 static char channel[256];
@@ -148,6 +147,8 @@ parsesrv(char *msg) {
 	else {
 		snprintf(bufout, sizeof bufout, ">< %s: %s", cmd, txt ? txt : "");
 		pout(usr, bufout);
+		if(!strncmp("NICK", cmd, 4) && !strncmp(usr, nick, sizeof nick) && txt)
+			strncpy(nick, txt, sizeof nick);
 	}
 }
 
@@ -160,7 +161,7 @@ main(int argc, char *argv[]) {
 	char ping[256];
 	fd_set rd;
 
-	nick = fullname = getenv("USER");
+	strncpy(nick, getenv("USER"), sizeof nick);
 	for(i = 1; i < argc; i++)
 		if(!strncmp(argv[i], "-h", 3)) {
 			if(++i < argc) host = argv[i];
@@ -169,19 +170,15 @@ main(int argc, char *argv[]) {
 			if(++i < argc) port = (unsigned short)atoi(argv[i]);
 		}
 		else if(!strncmp(argv[i], "-n", 3)) {
-			if(++i < argc) nick = argv[i];
+			if(++i < argc) strncpy(nick, argv[i], sizeof nick);
 		}
 		else if(!strncmp(argv[i], "-k", 3)) {
 			if(++i < argc) password = argv[i];
 		}
-		else if(!strncmp(argv[i], "-f", 3)) {
-			if(++i < argc) fullname = argv[i];
-		}
 		else if(!strncmp(argv[i], "-v", 3))
 			eprint("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n");
 		else
-			eprint("usage: sic [-h host] [-p port] [-n nick]"
-				" [-k keyword] [-f fullname] [-v]\n");
+			eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
 
 	/* init */
 	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -199,10 +196,10 @@ main(int argc, char *argv[]) {
 	if(password)
 		snprintf(bufout, sizeof bufout,
 				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
-				password, nick, nick, host, fullname);
+				password, nick, nick, host, nick);
 	else
 		snprintf(bufout, sizeof bufout, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
-				 nick, nick, host, fullname);
+				 nick, nick, host, nick);
 	write(srv, bufout, strlen(bufout));
 	snprintf(ping, sizeof ping, "PING %s\r\n", host);
 	channel[0] = 0;
