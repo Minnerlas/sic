@@ -95,11 +95,6 @@ parsein(char *msg) {
 		strncpy(channel, msg + 3, sizeof channel);
 		return;
 	}
-	else if(!strncmp(msg + 1, "t ", 2)) {
-		if((p = strchr(msg + 3, ' ')))
-			*(p++) = 0;
-		snprintf(bufout, sizeof bufout, "TOPIC %s :%s\r\n", msg + 3, p);
-	}
 	else
 		snprintf(bufout, sizeof bufout, "%s\r\n", msg + 1);
 	write(srv, bufout, strlen(bufout));
