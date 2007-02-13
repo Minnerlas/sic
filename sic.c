@@ -110,17 +110,20 @@ parsesrv(char *msg) {
 	char *chan, *cmd, *p, *txt, *usr; 
 
 	txt = NULL;
+	usr = host;
 	if(!msg || !(*msg))
 		return;
 	if(msg[0] != ':')
-		return; /* don't handle prefix-less server commands */
-	if(!(p = strchr(msg, ' ')))
-		return;
-	usr = msg + 1;
-	*p = 0;
-	cmd = ++p;
-	if((p = strchr(usr, '!')))
+		cmd = msg;
+	else {
+		if(!(p = strchr(msg, ' ')))
+			return;
 		*p = 0;
+		usr = msg + 1;
+		cmd = ++p;
+		if((p = strchr(usr, '!')))
+			*p = 0;
+	}
 	for(p = cmd; *p; p++) /* remove CRLFs */
 		if(*p == '\r' || *p == '\n')
 			*p = 0;
