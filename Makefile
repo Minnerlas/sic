@@ -13,7 +13,6 @@ options:
 	@echo "CFLAGS   = ${CFLAGS}"
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
-	@echo "LD       = ${LD}"
 
 .c.o:
 	@echo CC $<
@@ -22,8 +21,8 @@ options:
 ${OBJ}: config.mk
 
 sic: ${OBJ}
-	@echo LD $@
-	@${LD} -o $@ ${OBJ} ${LDFLAGS}
+	@echo CC -o $@
+	@${CC} -o $@ ${OBJ} ${LDFLAGS}
 	@strip $@
 
 clean:
