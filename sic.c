@@ -1,7 +1,6 @@
-/* (C)opyright MMV-MMVI Anselm R. Garbe <garbeam at gmail dot com>
- * (C)opyright MMV-MMVI Nico Golde <nico at ngolde dot de>
- * See LICENSE file for license details.
- */
+/* © 2005-2007 Anselm R. Garbe <garbeam at gmail dot com>
+ * © 2005 Nico Golde <nico at ngolde dot de>
+ * See LICENSE file for license details. */
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -174,7 +173,7 @@ main(int argc, char *argv[]) {
 			if(++i < argc) password = argv[i];
 		}
 		else if(!strncmp(argv[i], "-v", 3))
-			eprint("sic-"VERSION", (C)opyright MMVI Anselm R. Garbe\n");
+			eprint("sic-"VERSION", © 2005-2007 Anselm R. Garbe, Nico Golde\n");
 		else
 			eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
 

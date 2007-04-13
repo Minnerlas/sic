@@ -1,5 +1,5 @@
 # sic - simple irc client
-#   (C)opyright MMVI Anselm R. Garbe
+# © 2006-2007 Anselm R. Garbe, Sander van Dijk
 
 include config.mk
 
