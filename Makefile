@@ -1,5 +1,4 @@
 # sic - simple irc client
-# © 2006-2007 Anselm R. Garbe, Sander van Dijk
 
 include config.mk
 
