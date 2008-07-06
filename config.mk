@@ -12,10 +12,9 @@ INCS = -I. -I/usr/include
 LIBS = -L/usr/lib -lc
 
 # flags
-CFLAGS = -Os ${INCS} -DVERSION=\"${VERSION}\"
-LDFLAGS = ${LIBS}
-#CFLAGS = -g -Wall -O2 ${INCS} -DVERSION=\"${VERSION}\"
-#LDFLAGS = -g ${LIBS}
+CPPFLAGS = -DVERSION=\"${VERSION}\" -D_GNU_SOURCE
+CFLAGS = -std=c99 -pedantic -Wall -Os ${INCS} ${CPPFLAGS}
+LDFLAGS = -s ${LIBS}
 
 # compiler and linker
 CC = cc

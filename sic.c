@@ -1,4 +1,4 @@
-/* © 2005-2007 Anselm R. Garbe <garbeam at gmail dot com>
+/* © 2005-2008 Anselm R Garbe <garbeam at gmail dot com>
  * © 2005 Nico Golde <nico at ngolde dot de>
  * See LICENSE file for license details. */
 #include <errno.h>
@@ -14,7 +14,14 @@
 #include <sys/time.h>
 
 #define PINGTIMEOUT 300
-#define MAXMSG 4096
+#define MAXMSG      4096
+
+static void die(const char *errstr, ...);
+static void printl(char *channel, char *msg);
+static void privmsg(char *channel, char *msg);
+static void parsein(char *msg);
+static void parsesrv(char *msg);
+static int readl(int fd, unsigned int len, char *buf);
 
 static char *host = "irc.oftc.net";
 static unsigned short port = 6667;
@@ -26,8 +33,8 @@ static char channel[256];
 static int srv;
 static time_t trespond;
 
-static void
-eprint(const char *errstr, ...) {
+void
+die(const char *errstr, ...) {
 	va_list ap;
 
 	va_start(ap, errstr);
@@ -36,23 +43,8 @@ eprint(const char *errstr, ...) {
 	exit(EXIT_FAILURE);
 }
 
-static int
-getline(int fd, unsigned int len, char *buf) {
-	unsigned int i = 0;
-	char c;
-
-	do {
-		if(read(fd, &c, sizeof(char)) != sizeof(char))
-			return -1;
-		buf[i++] = c;
-	}
-	while(c != '\n' && i < len);
-	buf[i - 1] = 0;
-	return 0;
-}
-
-static void
-pout(char *channel, char *msg) {
+void
+printl(char *channel, char *msg) {
 	static char timestr[18];
 	time_t t = time(0);
 
@@ -60,17 +52,17 @@ pout(char *channel, char *msg) {
 	fprintf(stdout, "%-12.12s: %s %s\n", channel, timestr, msg);
 }
 
-static void
+void
 privmsg(char *channel, char *msg) {
 	if(channel[0] == 0)
 		return;
 	snprintf(bufout, sizeof bufout, "<%s> %s", nick, msg);
-	pout(channel, bufout);
+	printl(channel, bufout);
 	snprintf(bufout, sizeof bufout, "PRIVMSG %s :%s\r\n", channel, msg);
 	write(srv, bufout, strlen(bufout));
 }
 
-static void
+void
 parsein(char *msg) {
 	char *p;
 
@@ -99,7 +91,7 @@ parsein(char *msg) {
 	write(srv, bufout, strlen(bufout));
 }
 
-static void
+void
 parsesrv(char *msg) {
 	char *chan, *cmd, *p, *txt, *usr; 
 
@@ -135,7 +127,7 @@ parsesrv(char *msg) {
 		for(; *p && *p != ' '; p++);
 		*p = 0;
 		snprintf(bufout, sizeof bufout, "<%s> %s", usr, txt);
-		pout(chan, bufout);
+		printl(chan, bufout);
 	}
 	else if(!strncmp("PING", cmd, 4) && txt) {
 		snprintf(bufout, sizeof bufout, "PONG %s\r\n", txt);
@@ -143,11 +135,27 @@ parsesrv(char *msg) {
 	}
 	else {
 		snprintf(bufout, sizeof bufout, ">< %s: %s", cmd, txt ? txt : "");
-		pout(usr, bufout);
+		printl(usr, bufout);
 		if(!strncmp("NICK", cmd, 4) && !strncmp(usr, nick, sizeof nick) && txt)
 			strncpy(nick, txt, sizeof nick);
 	}
 }
+
+int
+readl(int fd, unsigned int len, char *buf) {
+	unsigned int i = 0;
+	char c;
+
+	do {
+		if(read(fd, &c, sizeof(char)) != sizeof(char))
+			return -1;
+		buf[i++] = c;
+	}
+	while(c != '\n' && i < len);
+	buf[i - 1] = 0;
+	return 0;
+}
+
 
 int
 main(int argc, char *argv[]) {
@@ -173,30 +181,30 @@ main(int argc, char *argv[]) {
 			if(++i < argc) password = argv[i];
 		}
 		else if(!strncmp(argv[i], "-v", 3))
-			eprint("sic-"VERSION", © 2005-2007 Anselm R. Garbe, Nico Golde\n");
+			die("sic-"VERSION", © 2005-2008 Anselm R Garbe, Nico Golde\n");
 		else
-			eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
+			die("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
 
 	/* init */
 	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		eprint("sic: cannot connect host '%s'\n", host);
+		die("error: cannot connect host '%s'\n", host);
 	if(NULL == (hp = gethostbyname(host)))
-		eprint("sic: cannot resolve hostname '%s'\n", host);
+		die("error: cannot resolve hostname '%s'\n", host);
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
 	if(connect(srv, (struct sockaddr *) &addr, sizeof(struct sockaddr_in))) {
 		close(srv);
-		eprint("sic: cannot connect host '%s'\n", host);
+		die("error: cannot connect host '%s'\n", host);
 	}
 	/* login */
 	if(password)
 		snprintf(bufout, sizeof bufout,
-				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
-				password, nick, nick, host, nick);
+		        "PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
+		        password, nick, nick, host, nick);
 	else
 		snprintf(bufout, sizeof bufout, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
-				 nick, nick, host, nick);
+		         nick, nick, host, nick);
 	write(srv, bufout, strlen(bufout));
 	snprintf(ping, sizeof ping, "PING %s\r\n", host);
 	channel[0] = 0;
@@ -212,23 +220,23 @@ main(int argc, char *argv[]) {
 		if(i < 0) {
 			if(errno == EINTR)
 				continue;
-			eprint("sic: error on select()");
+			die("error: error on select()");
 		}
 		else if(i == 0) {
 			if(time(NULL) - trespond >= PINGTIMEOUT)
-				eprint("sic shutting down: parse timeout");
+				die("error: sic shutting down: parse timeout");
 			write(srv, ping, strlen(ping));
 			continue;
 		}
 		if(FD_ISSET(srv, &rd)) {
-			if(getline(srv, sizeof bufin, bufin) == -1)
-				eprint("sic: remote host closed connection");
+			if(readl(srv, sizeof bufin, bufin) == -1)
+				die("error: remote host closed connection");
 			parsesrv(bufin);
 			trespond = time(NULL);
 		}
 		if(FD_ISSET(0, &rd)) {
-			if(getline(0, sizeof bufin, bufin) == -1)
-				eprint("sic: broken pipe");
+			if(readl(0, sizeof bufin, bufin) == -1)
+				die("error: broken pipe");
 			parsein(bufin);
 		}
 	}
