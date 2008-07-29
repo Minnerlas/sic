@@ -22,7 +22,6 @@ ${OBJ}: config.mk
 sic: ${OBJ}
 	@echo CC -o $@
 	@${CC} -o $@ ${OBJ} ${LDFLAGS}
-	@strip $@
 
 clean:
 	@echo cleaning
