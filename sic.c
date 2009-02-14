@@ -1,6 +1,4 @@
-/* © 2005-2008 Anselm R Garbe <garbeam at gmail dot com>
- * © 2005 Nico Golde <nico at ngolde dot de>
- * See LICENSE file for license details. */
+/* See LICENSE file for license details. */
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -23,8 +21,8 @@ static void parsein(char *msg);
 static void parsesrv(char *msg);
 static int readl(int fd, unsigned int len, char *buf);
 
-static char *host = "irc.oftc.net";
-static unsigned short port = 6667;
+static char *host = "irc6.oftc.net";
+static char *port = "6667";
 static char *password = NULL;
 static char nick[32];
 
@@ -161,8 +159,7 @@ int
 main(int argc, char *argv[]) {
 	int i;
 	struct timeval tv;
-	struct hostent *hp;
-	static struct sockaddr_in addr;  /* initially filled with 0's */
+	static struct addrinfo hints, *res, *r;
 	char ping[256];
 	fd_set rd;
 
@@ -172,7 +169,7 @@ main(int argc, char *argv[]) {
 			if(++i < argc) host = argv[i];
 		}
 		else if(!strncmp(argv[i], "-p", 3)) {
-			if(++i < argc) port = (unsigned short)atoi(argv[i]);
+			if(++i < argc) port = argv[i];
 		}
 		else if(!strncmp(argv[i], "-n", 3)) {
 			if(++i < argc) strncpy(nick, argv[i], sizeof nick);
@@ -181,22 +178,27 @@ main(int argc, char *argv[]) {
 			if(++i < argc) password = argv[i];
 		}
 		else if(!strncmp(argv[i], "-v", 3))
-			die("sic-"VERSION", © 2005-2008 Anselm R Garbe, Nico Golde\n");
+			die("sic-"VERSION", © 2005-2009 sic engineers\n");
 		else
 			die("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
 
 	/* init */
-	if((srv = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		die("error: cannot connect host '%s'\n", host);
-	if(NULL == (hp = gethostbyname(host)))
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	if(getaddrinfo(host, port, &hints, &res) != 0)
 		die("error: cannot resolve hostname '%s'\n", host);
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
-	if(connect(srv, (struct sockaddr *) &addr, sizeof(struct sockaddr_in))) {
+	for(ri = res; r; r = r->ai_next) {
+		if((srv = socket(r->ai_family, r->ai_socktype, r->ai_protocol)) == -1)
+			continue;
+		if(connect(srv, r->ai_addr, r->ai_addrlen) == 0)
+			break;
 		close(srv);
-		die("error: cannot connect host '%s'\n", host);
 	}
+	freeaddrinfo(res);
+	if(!r)
+		die("error: cannot connect to host '%s'\n", host);
+
 	/* login */
 	if(password)
 		snprintf(bufout, sizeof bufout,
