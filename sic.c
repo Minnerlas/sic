@@ -220,23 +220,23 @@ main(int argc, char *argv[]) {
 		if(i < 0) {
 			if(errno == EINTR)
 				continue;
-			die("error: error on select()");
+			die("error: error on select()\n");
 		}
 		else if(i == 0) {
 			if(time(NULL) - trespond >= PINGTIMEOUT)
-				die("error: sic shutting down: parse timeout");
+				die("error: sic shutting down: parse timeout\n");
 			write(srv, ping, strlen(ping));
 			continue;
 		}
 		if(FD_ISSET(srv, &rd)) {
 			if(readl(srv, sizeof bufin, bufin) == -1)
-				die("error: remote host closed connection");
+				die("error: remote host closed connection\n");
 			parsesrv(bufin);
 			trespond = time(NULL);
 		}
 		if(FD_ISSET(0, &rd)) {
 			if(readl(0, sizeof bufin, bufin) == -1)
-				die("error: broken pipe");
+				die("error: broken pipe\n");
 			parsein(bufin);
 		}
 	}
