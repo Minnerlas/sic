@@ -188,7 +188,7 @@ main(int argc, char *argv[]) {
 	hints.ai_socktype = SOCK_STREAM;
 	if(getaddrinfo(host, port, &hints, &res) != 0)
 		die("error: cannot resolve hostname '%s'\n", host);
-	for(ri = res; r; r = r->ai_next) {
+	for(r = res; r; r = r->ai_next) {
 		if((srv = socket(r->ai_family, r->ai_socktype, r->ai_protocol)) == -1)
 			continue;
 		if(connect(srv, r->ai_addr, r->ai_addrlen) == 0)
