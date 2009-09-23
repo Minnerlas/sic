@@ -21,21 +21,27 @@ eprint(const char *fmt, ...) {
 }
 
 static int
-dial(char *host, int port) {
-	struct hostent *hp;
-	static struct sockaddr_in addr;
-	int i;
+dial(char *host, char *port) {
+	static struct addrinfo hints;
+	struct addrinfo *res, *r;
+	int srv;
 
-	if((i = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		eprint("sic: cannot connect host '%s':", host);
-	if(nil == (hp = gethostbyname(host)))
-		eprint("sic: cannot resolve hostname '%s': %s\n", host, hstrerror(h_errno));
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
-	if(connect(i, (struct sockaddr*)&addr, sizeof(struct sockaddr_in)))
-		eprint("sic: cannot connect host '%s':", host);
-	return i;
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	if(getaddrinfo(host, port, &hints, &res) != 0)
+		eprint("error: cannot resolve hostname '%s':", host);
+	for(r = res; r; r = r->ai_next) {
+		if((srv = socket(r->ai_family, r->ai_socktype, r->ai_protocol)) == -1)
+			continue;
+		if(connect(srv, r->ai_addr, r->ai_addrlen) == 0)
+			break;
+		close(srv);
+	}
+	freeaddrinfo(res);
+	if(!r)
+		eprint("error: cannot connect to host '%s'\n", host);
+	return srv;
 }
 
 #define strlcpy _strlcpy

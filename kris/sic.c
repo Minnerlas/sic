@@ -18,7 +18,7 @@ typedef unsigned short ushort;
 #define PINGTIMEOUT 300
 
 static char*	host = "irc.oftc.net";
-static ushort	port = 6667;
+static char*	port = "ircd";
 static char*	password;
 static char	nick[32];
 
@@ -150,7 +150,7 @@ main(int argc, char *argv[]) {
 			if(++i < argc) host = argv[i];
 			break;
 		case 'p':
-			if(++i < argc) port = atoi(argv[i]);
+			if(++i < argc) port = argv[i];
 			break;
 		case 'n':
 			if(++i < argc) strlcpy(nick, argv[i], sizeof nick);
