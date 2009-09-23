@@ -28,14 +28,6 @@ static char channel[256];
 static time_t trespond;
 static FILE *srv;
 
-#define va_buf(buf, fmt) {\
-	va_list ap; \
-	\
-	va_start(ap, fmt); \
-	vsnprintf(buf, sizeof buf, fmt, ap); \
-	va_end(ap); \
-}
-
 #include "util.c"
 
 static void
@@ -167,7 +159,7 @@ main(int argc, char *argv[]) {
 			if(++i < argc) password = argv[i];
 			break;
 		case 'v':
-			eprint("sic-"VERSION", ? 2005-2007 Anselm R. Garbe, Nico Golde\n");
+			eprint("sic-"VERSION", ©2005-2009 Kris Maglione, Anselm R. Garbe, Nico Golde\n");
 		default:
 			eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
 		}

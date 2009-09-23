@@ -2,6 +2,13 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#define va_buf(buf, fmt) {\
+	va_list ap; \
+	va_start(ap, fmt); \
+	vsnprintf(buf, sizeof buf, fmt, ap); \
+	va_end(ap); \
+}
+
 static void
 eprint(const char *fmt, ...) {
 
@@ -34,7 +41,7 @@ dial(char *host, int port) {
 #define strlcpy _strlcpy
 static void
 strlcpy(char *to, const char *from, int l) {
-	strncpy(to, from, l-1);
+	memccpy(to, from, '\0', l);
 	to[l-1] = '\0';
 }
 
