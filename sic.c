@@ -37,7 +37,7 @@ void
 die(const char *errstr, ...) {
 	va_list ap;
 	va_start(ap, errstr);
-	(void) vfprintf(stderr, errstr, ap);
+	vfprintf(stderr, errstr, ap);
 	va_end(ap);
 	exit(EXIT_FAILURE);
 }
@@ -46,7 +46,7 @@ void
 printl(char *channel, char *msg) {
 	static char timestr[18];
 	time_t t = time(0);
-	(void) strftime(timestr, sizeof timestr, "%D %R", localtime(&t));
+	strftime(timestr, sizeof timestr, "%D %R", localtime(&t));
 	fprintf(stdout, "%-12.12s: %s %s\n", channel, timestr, msg);
 }
 
@@ -54,10 +54,10 @@ void
 privmsg(char *channel, char *msg) {
 	if(channel[0] == '\0')
 		return;
-	(void) snprintf(bufout, sizeof bufout, "<%s> %s", nick, msg);
+	snprintf(bufout, sizeof bufout, "<%s> %s", nick, msg);
 	printl(channel, bufout);
-	(void) snprintf(bufout, sizeof bufout, "PRIVMSG %s :%s\r\n", channel, msg);
-	(void) write(srv, bufout, strlen(bufout));
+	snprintf(bufout, sizeof bufout, "PRIVMSG %s :%s\r\n", channel, msg);
+	write(srv, bufout, strlen(bufout));
 }
 
 void
@@ -70,9 +70,9 @@ parsein(char *msg) {
 		return;
 	}
 	if(strncmp(msg + 1, "j ", 2) == 0 && (msg[3] == '#'))
-		(void) snprintf(bufout, sizeof bufout, "JOIN %s\r\n", msg + 3);
+		snprintf(bufout, sizeof bufout, "JOIN %s\r\n", msg + 3);
 	else if(strncmp(msg + 1, "l ", 2) == 0)
-		(void) snprintf(bufout, sizeof bufout, "PART %s :sic - 250 LOC are too much!\r\n", msg + 3);
+		snprintf(bufout, sizeof bufout, "PART %s :sic - 250 LOC are too much!\r\n", msg + 3);
 	else if(strncmp(msg + 1, "m ", 2) == 0) {
 		if((p = strchr(msg + 3, ' ')))
 			*(p++) = '\0';
@@ -80,12 +80,12 @@ parsein(char *msg) {
 		return;
 	}
 	else if(strncmp(msg + 1, "s ", 2) == 0) {
-		strncpy(channel, msg + 3, sizeof channel);
+		strncpy(channel, msg + 3, sizeof channel - 1);
 		return;
 	}
 	else
-		(void) snprintf(bufout, sizeof bufout, "%s\r\n", msg + 1);
-	(void) write(srv, bufout, strlen(bufout));
+		snprintf(bufout, sizeof bufout, "%s\r\n", msg + 1);
+	write(srv, bufout, strlen(bufout));
 }
 
 void
@@ -123,12 +123,12 @@ parsesrv(char *msg) {
 		chan = ++p;
 		for(; *p != '\0' && *p != ' '; p++);
 		*p = '\0';
-		(void) snprintf(bufout, sizeof bufout, "<%s> %s", usr, txt);
+		snprintf(bufout, sizeof bufout, "<%s> %s", usr, txt);
 		printl(chan, bufout);
 	}
 	else if(strncmp("PING", cmd, 4) == 0 && txt != NULL) {
-		(void) snprintf(bufout, sizeof bufout, "PONG %s\r\n", txt);
-		(void) write(srv, bufout, strlen(bufout));
+		snprintf(bufout, sizeof bufout, "PONG %s\r\n", txt);
+		write(srv, bufout, strlen(bufout));
 	}
 	else {
 		if (txt != NULL)
@@ -136,9 +136,8 @@ parsesrv(char *msg) {
 		else
 			(void) snprintf(bufout, sizeof bufout, ">< %s: ", cmd);
 		printl(usr, bufout);
-		if(strncmp("NICK", cmd, 4) == 0 && strncmp(usr, nick, sizeof nick) == 0 &&
-				txt != NULL)
-			(void) strncpy(nick, txt, sizeof nick);
+		if(strncmp("NICK", cmd, 4) == 0 && strncmp(usr, nick, sizeof nick) == 0 && txt != NULL)
+			strncpy(nick, txt, sizeof nick - 1);
 	}
 }
 
@@ -167,21 +166,21 @@ main(const int argc, char *const argv[]) {
 	fd_set rd;
 	char *password = NULL;
 
-	strncpy(nick, getenv("USER"), sizeof nick);
+	strncpy(nick, getenv("USER"), sizeof nick - 1);
 	for(i = 1; i < argc; i++)
-		if(strncmp(argv[i], "-h", 3) == 0) {
+		if(strcmp(argv[i], "-h") == 0) {
 			if(++i < argc) host = argv[i];
 		}
-		else if(strncmp(argv[i], "-p", 3) == 0) {
+		else if(strcmp(argv[i], "-p") == 0) {
 			if(++i < argc) port = argv[i];
 		}
-		else if(strncmp(argv[i], "-n", 3) == 0) {
-			if(++i < argc) strncpy(nick, argv[i], sizeof nick);
+		else if(strcmp(argv[i], "-n") == 0) {
+			if(++i < argc) strncpy(nick, argv[i], sizeof nick - 1);
 		}
-		else if(strncmp(argv[i], "-k", 3) == 0) {
+		else if(strcmp(argv[i], "-k") == 0) {
 			if(++i < argc) password = argv[i];
 		}
-		else if(strncmp(argv[i], "-v", 3) == 0)
+		else if(strcmp(argv[i], "-v") == 0)
 			die("sic-%s, © 2005-2009 sic engineers\n", VERSION);
 		else
 			die("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
@@ -197,7 +196,7 @@ main(const int argc, char *const argv[]) {
 			continue;
 		if(connect(srv, r->ai_addr, r->ai_addrlen) == 0)
 			break;
-		(void) close(srv);
+		close(srv);
 	}
 	freeaddrinfo(res);
 	if(!r)
@@ -205,14 +204,14 @@ main(const int argc, char *const argv[]) {
 
 	/* login */
 	if (password)
-		(void) snprintf(bufout, sizeof bufout,
+		snprintf(bufout, sizeof bufout,
 		        "PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n",
 		        password, nick, nick, host, nick);
 	else
-		(void) snprintf(bufout, sizeof bufout, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
+		snprintf(bufout, sizeof bufout, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
 		         nick, nick, host, nick);
-	(void) write(srv, bufout, strlen(bufout));
-	(void) snprintf(ping, sizeof ping, "PING %s\r\n", host);
+	write(srv, bufout, strlen(bufout));
+	snprintf(ping, sizeof ping, "PING %s\r\n", host);
 	channel[0] = '\0';
 	setbuf(stdout, NULL); /* unbuffered stdout */
 
@@ -231,7 +230,7 @@ main(const int argc, char *const argv[]) {
 		else if(i == 0) {
 			if(time(NULL) - trespond >= PINGTIMEOUT)
 				die("error: sic shutting down: parse timeout\n");
-			(void) write(srv, ping, strlen(ping));
+			write(srv, ping, strlen(ping));
 			continue;
 		}
 		if(FD_ISSET(srv, &rd) != 0) {
@@ -241,7 +240,7 @@ main(const int argc, char *const argv[]) {
 			trespond = time(NULL);
 		}
 		if(FD_ISSET(0, &rd) != 0) {
-			if(readl(0, (unsigned int) sizeof bufin, bufin) == -1)
+			if(readl(0, sizeof bufin, bufin) == -1)
 				die("error: broken pipe\n");
 			parsein(bufin);
 		}
