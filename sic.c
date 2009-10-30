@@ -73,9 +73,8 @@ parsein(char *msg) {
 		snprintf(bufout, sizeof bufout, "JOIN %s\r\n", msg + 3);
 	else if(strncmp(msg + 1, "l ", 2) == 0)
 		snprintf(bufout, sizeof bufout, "PART %s :sic - 250 LOC are too much!\r\n", msg + 3);
-	else if(strncmp(msg + 1, "m ", 2) == 0) {
-		if((p = strchr(msg + 3, ' ')))
-			*(p++) = '\0';
+	else if(strncmp(msg + 1, "m ", 2) == 0 && (p = strchr(msg + 3, ' '))) {
+		*(p++) = '\0';
 		privmsg(msg + 3, p);
 		return;
 	}
