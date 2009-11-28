@@ -1,21 +1,17 @@
+/* See LICENSE file for license details. */
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#define va_buf(buf, fmt) {\
-	va_list ap; \
-	va_start(ap, fmt); \
-	vsnprintf(buf, sizeof buf, fmt, ap); \
-	va_end(ap); \
-}
-
 static void
 eprint(const char *fmt, ...) {
+	va_list ap;
 
-	va_buf(bufout, fmt);
+	va_start(ap, fmt);
+	vsnprintf(bufout, sizeof bufout, fmt, ap);
+	va_end(ap);
 	fprintf(stderr, "%s", bufout);
-
-	if(fmt[0] && fmt[strlen(fmt)-1] == ':')
+	if(fmt[0] && fmt[strlen(fmt) - 1] == ':')
 		fprintf(stderr, " %s\n", strerror(errno));
 	exit(1);
 }
@@ -23,8 +19,8 @@ eprint(const char *fmt, ...) {
 static int
 dial(char *host, char *port) {
 	static struct addrinfo hints;
-	struct addrinfo *res, *r;
 	int srv;
+	struct addrinfo *res, *r;
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
@@ -55,7 +51,7 @@ static void
 eat(char **s, int (*p)(int), int r) {
 	char *q;
 
-	for(q=*s; *q && p(*q) == r; q++)
+	for(q = *s; *q && p(*q) == r; q++)
 		;
 	*s = q;
 }
@@ -67,7 +63,8 @@ tok(char **s) {
 	eat(s, isspace, 1);
 	p = *s;
 	eat(s, isspace, 0);
-	if(**s) *(*s)++ = '\0';
+	if(**s)
+		*(*s)++ = '\0';
 	return p;
 }
 
@@ -76,11 +73,9 @@ ctok(char **s, int c) {
 	char *p, *q;
 
 	q = *s;
-	for(p=q; *p && *p != c; p++)
+	for(p = q; *p && *p != c; p++)
 		;
 	if(*p) *p++ = '\0';
 	*s = p;
 	return q;
 }
-
-
