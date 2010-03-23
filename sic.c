@@ -42,7 +42,6 @@ sout(char *fmt, ...) {
 	vsnprintf(bufout, sizeof bufout, fmt, ap);
 	va_end(ap);
 	fprintf(srv, "%s\r\n", bufout);
-	fprintf(stderr, "debug: %s\n", bufout);
 }
 
 static void
