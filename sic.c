@@ -55,76 +55,77 @@ privmsg(char *channel, char *msg) {
 }
 
 static void
-parsein(char *msg) {
-	char *p;
-	char c;
+parsein(char *s) {
+	char c, *p;
 
-	if(msg[0] == '\0')
+	if(s[0] == '\0')
 		return;
-	msg = ctok(&msg, '\n');
-	if(msg[0] != ':') {
-		privmsg(channel, msg);
+	skip(s, '\n');
+	if(s[0] != ':') {
+		privmsg(channel, s);
 		return;
 	}
-	c = *++msg;
-	if(!c || !isspace(msg[1]))
-		sout("%s", msg);
-	else {
-		if(msg[1])
-			msg += 2;
+	c = *++s;
+	if(c != '\0' && isspace(s[1])) {
+		p = s + 2;
 		switch(c) {
 		case 'j':
-			sout("JOIN %s", msg);
+			sout("JOIN %s", p);
 			if(channel[0] == '\0')
-				strlcpy(channel, msg, sizeof channel);
-			break;
+				strlcpy(channel, p, sizeof channel);
+			return;
 		case 'l':
-			p = tok(&msg);
+			s = eat(p, isspace, 1);
+			p = eat(s, isspace, 0);
+			if(!*s)
+				s = channel;
+			if(*p)
+				*p++ = '\0';
 			if(!*p)
-				p = channel;
-			if(!*msg)
-				msg = "sic - 250 LOC are too much!";
-			sout("PART %s :%s", p, msg);
-			break;
+				p = "sic - 250 LOC are too much!";
+			sout("PART %s :%s", s, p);
+			return;
 		case 'm':
-			p = tok(&msg);
-			privmsg(p, msg);
-			break;
+			s = eat(p, isspace, 1);
+			p = eat(s, isspace, 0);
+			if(*p)
+				*p++ = '\0';
+			privmsg(s, p);
+			return;
 		case 's':
-			strlcpy(channel, msg, sizeof channel);
-			break;
-		default:
-			sout("%c %s", c, msg);
-			break;
+			strlcpy(channel, p, sizeof channel);
+			return;
 		}
 	}
+	sout("%s", s);
 }
 
 static void
-parsesrv(char *msg) {
-	char *cmd, *p, *usr, *txt;
+parsesrv(char *cmd) {
+	char *usr, *par, *txt;
 
 	usr = host;
-	if(!msg || !*msg)
+	if(!cmd || !*cmd)
 		return;
-	if(msg[0] == ':') {
-		msg++;
-		p = tok(&msg);
-		if(!*msg)
+	if(cmd[0] == ':') {
+		usr = cmd + 1;
+		cmd = skip(usr, ' ');
+		if(cmd[0] == '\0')
 			return;
-		usr = ctok(&p, '!');
+		skip(usr, '!');
 	}
-	txt = ctok(&msg, '\r');
-	msg = ctok(&txt, ':');
-	cmd = tok(&msg);
+	skip(cmd, '\r');
+	par = skip(cmd, ' ');
+	txt = skip(par, ':');
+	trim(par);
 	if(!strcmp("PONG", cmd))
 		return;
 	if(!strcmp("PRIVMSG", cmd))
-		pout(msg, "<%s> %s", usr, txt);
+		pout(par, "<%s> %s", usr, txt);
 	else if(!strcmp("PING", cmd))
 		sout("PONG %s", txt);
 	else {
-		pout(usr, ">< %s: %s", cmd, txt);
+		pout(usr, ">< %s (%s): %s", cmd, par, txt);
 		if(!strcmp("NICK", cmd) && !strcmp(usr, nick))
 			strlcpy(nick, txt, sizeof nick);
 	}

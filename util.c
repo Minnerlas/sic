@@ -47,35 +47,28 @@ strlcpy(char *to, const char *from, int l) {
 	to[l-1] = '\0';
 }
 
+static char *
+eat(char *s, int (*p)(int), int r) {
+	while(s != '\0' && p(*s) == r)
+		s++;
+	return s;
+}
+
+static char*
+skip(char *s, char c) {
+        while(*s != c && *s != '\0')
+                s++;
+        if (*s != '\0')
+                *s++ = '\0';
+        return s;
+}
+
 static void
-eat(char **s, int (*p)(int), int r) {
-	char *q;
+trim(char *s) {
+	char *e;
 
-	for(q = *s; *q && p(*q) == r; q++)
-		;
-	*s = q;
-}
-
-static char*
-tok(char **s) {
-	char *p;
-
-	eat(s, isspace, 1);
-	p = *s;
-	eat(s, isspace, 0);
-	if(**s)
-		*(*s)++ = '\0';
-	return p;
-}
-
-static char*
-ctok(char **s, int c) {
-	char *p, *q;
-
-	q = *s;
-	for(p = q; *p && *p != c; p++)
-		;
-	if(*p) *p++ = '\0';
-	*s = p;
-	return q;
+	e = s + strlen(s) - 1;
+	while (isspace(*e) && e > s)
+		e--;
+	*(e + 1) = '\0';
 }
