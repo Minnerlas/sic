@@ -56,11 +56,11 @@ eat(char *s, int (*p)(int), int r) {
 
 static char*
 skip(char *s, char c) {
-        while(*s != c && *s != '\0')
-                s++;
-        if (*s != '\0')
-                *s++ = '\0';
-        return s;
+	while(*s != c && *s != '\0')
+		s++;
+	if(*s != '\0')
+		*s++ = '\0';
+	return s;
 }
 
 static void
@@ -68,7 +68,7 @@ trim(char *s) {
 	char *e;
 
 	e = s + strlen(s) - 1;
-	while (isspace(*e) && e > s)
+	while(isspace(*e) && e > s)
 		e--;
 	*(e + 1) = '\0';
 }
