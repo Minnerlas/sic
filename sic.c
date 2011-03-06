@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 static char *host = "irc.oftc.net";
-static char *port = "ircd";
+static char *port = "6667";
 static char *password;
 static char nick[32];
 static char bufin[4096];

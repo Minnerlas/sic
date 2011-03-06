@@ -17,7 +17,7 @@ options:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
-${OBJ}: config.mk
+${OBJ}: config.mk util.c
 
 sic: ${OBJ}
 	@echo CC -o $@
