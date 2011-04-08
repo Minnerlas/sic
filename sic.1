@@ -10,14 +10,14 @@ sic \- simple irc client
 .RB [ \-v ]
 .SH DESCRIPTION
 .B sic
-is an extremly fast, small and simple irc client.  It reads commands from
-standard input and prints all server output to standard output. It multiplexes
-also all channel traffic into one output, that you don't have to switch
-different channel buffers, that's actually a feature.
+is an extremely fast, small and simple irc client. It reads commands from
+standard input and prints all server output to standard output. It also
+multiplexes all channel traffic into one output. That way you don't have to
+switch different channel buffers. So that's actually a feature.
 .SH OPTIONS
 .TP
 .B \-h <host>
-Overrides the default host (irc6.oftc.net)
+Overrides the default host (irc.oftc.net)
 .TP
 .B \-p <port>
 Overrides the default port (6667)
@@ -29,7 +29,7 @@ Override the default nick ($USER)
 Specifies the keyword to authenticate your nick on the host
 .TP
 .BI \-v
-Prints version information to standard output, then exits.
+Prints version information to standard output, then exits
 .SH COMMANDS
 .TP
 .B :j #channel
