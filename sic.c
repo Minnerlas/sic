@@ -138,8 +138,7 @@ main(int argc, char *argv[]) {
 	const char *user = getenv("USER");
 	fd_set rd;
 
-	if (!user) user = "unknown";
-	strlcpy(nick, user, sizeof nick);
+	strlcpy(nick, user ? user : "unknown", sizeof nick);
 	for(i = 1; i < argc; i++) {
 		c = argv[i][1];
 		if(argv[i][0] != '-' || argv[i][2])
@@ -157,13 +156,10 @@ main(int argc, char *argv[]) {
 		case 'k':
 			if(++i < argc) password = argv[i];
 			break;
-		case 'u':
-			if (++i < argc) user = argv[i];
-			break;
 		case 'v':
-			eprint("sic-"VERSION", © 2005-2009 Kris Maglione, Anselm R. Garbe, Nico Golde\n");
+			eprint("sic-"VERSION", © 2005-2012 Kris Maglione, Anselm R. Garbe, Nico Golde\n");
 		default:
-			eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-u user] [-v]\n");
+			eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
 		}
 	}
 	/* init */
@@ -173,7 +169,7 @@ main(int argc, char *argv[]) {
 	if(password)
 		sout("PASS %s", password);
 	sout("NICK %s", nick);
-	sout("USER %s localhost %s :%s", user, host, nick);
+	sout("USER %s localhost %s :%s", nick, host, nick);
 	fflush(srv);
 	setbuf(stdout, NULL);
 	setbuf(srv, NULL);
