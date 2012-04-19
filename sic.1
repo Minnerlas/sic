@@ -3,10 +3,14 @@
 sic \- simple irc client
 .SH SYNOPSIS
 .B sic
-.RB [ \-h " <host>"]
-.RB [ \-p " <port>"]
-.RB [ \-n " <nick>"]
-.RB [ \-k " <keyword>"]
+.RB [ \-h
+.IR host ]
+.RB [ \-p
+.IR port ]
+.RB [ \-n
+.IR nick ]
+.RB [ \-k
+.IR pass ]
 .RB [ \-v ]
 .SH DESCRIPTION
 .B sic
@@ -16,32 +20,35 @@ multiplexes all channel traffic into one output. That way you don't have to
 switch different channel buffers. So that's actually a feature.
 .SH OPTIONS
 .TP
-.B \-h <host>
+.BI \-h " host"
 Overrides the default host (irc.oftc.net)
 .TP
-.B \-p <port>
+.BI \-p " port"
 Overrides the default port (6667)
 .TP
-.B \-n <nickname>
+.BI \-n " nick"
 Override the default nick ($USER)
 .TP
-.B \-k <keyword>
-Specifies the keyword to authenticate your nick on the host
+.BI \-k " pass"
+Specifies the PASS connection password
 .TP
-.BI \-v
-Prints version information to standard output, then exits
+.B \-v
+Prints version information to stderr, then exits
 .SH COMMANDS
 .TP
-.B :j #channel
+.BI :j " #channel"
 Join a channel
 .TP
-.B :l #channel
+.BI :l " #channel"
 Leave a channel
 .TP
-.B :m #channel/user msg
-Write a message to #channel/user
+.BI :m " #channel/user message"
+Send a message to channel or user
 .TP
-.B :s #channel/user
-Set default channel/user
+.BI :s " #channel/user"
+Set default channel or user
 .TP
-Everything which is not a command is simply send the server.
+.BI : command
+Any line beginning with
+.B :
+is sent as a command
