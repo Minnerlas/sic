@@ -49,7 +49,7 @@ strlcpy(char *to, const char *from, int l) {
 
 static char *
 eat(char *s, int (*p)(int), int r) {
-	while(s != '\0' && p(*s) == r)
+	while(*s != '\0' && p(*s) == r)
 		s++;
 	return s;
 }
