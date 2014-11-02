@@ -8,8 +8,10 @@
 #include <time.h>
 #include <unistd.h>
 
-static char *host = "irc.oftc.net";
-static char *port = "6667";
+#include "config.h"
+
+static char *host = DEFAULT_HOST;
+static char *port = DEFAULT_PORT;
 static char *password;
 static char nick[32];
 static char bufin[4096];
@@ -22,7 +24,7 @@ static FILE *srv;
 
 static void
 pout(char *channel, char *fmt, ...) {
-	static char timestr[18];
+	static char timestr[80];
 	time_t t;
 	va_list ap;
 
@@ -30,7 +32,7 @@ pout(char *channel, char *fmt, ...) {
 	vsnprintf(bufout, sizeof bufout, fmt, ap);
 	va_end(ap);
 	t = time(NULL);
-	strftime(timestr, sizeof timestr, "%D %R", localtime(&t));
+	strftime(timestr, sizeof timestr, TIMESTAMP_FORMAT, localtime(&t));
 	fprintf(stdout, "%-12s: %s %s\n", channel, timestr, bufout);
 }
 
