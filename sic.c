@@ -63,7 +63,7 @@ parsein(char *s) {
 	if(s[0] == '\0')
 		return;
 	skip(s, '\n');
-	if(s[0] != ':') {
+	if(s[0] != COMMAND_PREFIX_CHARACTER) {
 		privmsg(channel, s);
 		return;
 	}
@@ -84,7 +84,7 @@ parsein(char *s) {
 			if(*p)
 				*p++ = '\0';
 			if(!*p)
-				p = "sic - 250 LOC are too much!";
+				p = DEFAULT_PARTING_MESSAGE;
 			sout("PART %s :%s", s, p);
 			return;
 		case 'm':
