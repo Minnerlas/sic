@@ -8,8 +8,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "arg.h"
 #include "config.h"
 
+char *argv0;
 static char *host = DEFAULT_HOST;
 static char *port = DEFAULT_PORT;
 static char *password;
@@ -133,40 +135,44 @@ parsesrv(char *cmd) {
 	}
 }
 
+
+static void
+usage(void) {
+	eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n", argv0);
+}
+
 int
 main(int argc, char *argv[]) {
-	int i, c;
 	struct timeval tv;
 	const char *user = getenv("USER");
+	int n;
 	fd_set rd;
 
 	strlcpy(nick, user ? user : "unknown", sizeof nick);
-	for(i = 1; i < argc; i++) {
-		c = argv[i][1];
-		if(argv[i][0] != '-' || argv[i][2])
-			c = -1;
-		switch(c) {
-		case 'h':
-			if(++i < argc) host = argv[i];
-			break;
-		case 'p':
-			if(++i < argc) port = argv[i];
-			break;
-		case 'n':
-			if(++i < argc) strlcpy(nick, argv[i], sizeof nick);
-			break;
-		case 'k':
-			if(++i < argc) password = argv[i];
-			break;
-		case 'v':
-			eprint("sic-"VERSION", © 2005-2012 Kris Maglione, Anselm R. Garbe, Nico Golde\n");
-		default:
-			eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n");
-		}
-	}
+	ARGBEGIN {
+	case 'h':
+		host = EARGF(usage());
+		break;
+	case 'p':
+		port = EARGF(usage());
+		break;
+	case 'n':
+		strlcpy(nick, EARGF(usage()), sizeof nick);
+		break;
+	case 'k':
+		password = EARGF(usage());
+		break;
+	case 'v':
+		eprint("sic-"VERSION", © 2005-2014 Kris Maglione, Anselm R. Garbe, Nico Golde\n");
+		break;
+	default:
+		usage();
+	} ARGEND;
+
 	/* init */
-	i = dial(host, port);
-	srv = fdopen(i, "r+");
+	srv = fdopen(dial(host, port), "r+");
+	if (!srv)
+		eprint("fdopen:");
 	/* login */
 	if(password)
 		sout("PASS %s", password);
@@ -181,13 +187,13 @@ main(int argc, char *argv[]) {
 		FD_SET(fileno(srv), &rd);
 		tv.tv_sec = 120;
 		tv.tv_usec = 0;
-		i = select(fileno(srv) + 1, &rd, 0, 0, &tv);
-		if(i < 0) {
+		n = select(fileno(srv) + 1, &rd, 0, 0, &tv);
+		if(n < 0) {
 			if(errno == EINTR)
 				continue;
 			eprint("sic: error on select():");
 		}
-		else if(i == 0) {
+		else if(n == 0) {
 			if(time(NULL) - trespond >= 300)
 				eprint("sic shutting down: parse timeout\n");
 			sout("PING %s", host);
