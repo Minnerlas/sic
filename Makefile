@@ -34,7 +34,7 @@ clean:
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p sic-${VERSION}
-	@cp -R LICENSE Makefile README config.def.h config.mk sic.1 sic.c util.c sic-${VERSION}
+	@cp -R LICENSE Makefile README arg.h config.def.h config.mk sic.1 sic.c util.c sic-${VERSION}
 	@tar -cf sic-${VERSION}.tar sic-${VERSION}
 	@gzip sic-${VERSION}.tar
 	@rm -rf sic-${VERSION}
