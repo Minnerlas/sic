@@ -181,6 +181,7 @@ main(int argc, char *argv[]) {
 	fflush(srv);
 	setbuf(stdout, NULL);
 	setbuf(srv, NULL);
+	setbuf(stdin, NULL);
 	for(;;) { /* main loop */
 		FD_ZERO(&rd);
 		FD_SET(0, &rd);
