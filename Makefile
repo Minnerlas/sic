@@ -17,7 +17,7 @@ options:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
-${OBJ}: config.h config.mk util.c
+${OBJ}: config.h config.mk strlcpy.c util.c
 
 config.h:
 	@echo creating $@ from config.def.h
@@ -34,7 +34,7 @@ clean:
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p sic-${VERSION}
-	@cp -R LICENSE Makefile README arg.h config.def.h config.mk sic.1 sic.c util.c sic-${VERSION}
+	@cp -R LICENSE Makefile README arg.h config.def.h config.mk sic.1 sic.c util.c strlcpy.c sic-${VERSION}
 	@tar -cf sic-${VERSION}.tar sic-${VERSION}
 	@gzip sic-${VERSION}.tar
 	@rm -rf sic-${VERSION}

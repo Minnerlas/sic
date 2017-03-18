@@ -22,6 +22,8 @@ static char channel[256];
 static time_t trespond;
 static FILE *srv;
 
+#undef strlcpy
+#include "strlcpy.c"
 #include "util.c"
 
 static void
@@ -182,6 +184,10 @@ main(int argc, char *argv[]) {
 	setbuf(stdout, NULL);
 	setbuf(srv, NULL);
 	setbuf(stdin, NULL);
+#ifdef __OpenBSD__
+	if (pledge("stdio", NULL) == -1)
+		eprint("error: pledge:");
+#endif
 	for(;;) { /* main loop */
 		FD_ZERO(&rd);
 		FD_SET(0, &rd);

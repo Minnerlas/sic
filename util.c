@@ -40,13 +40,6 @@ dial(char *host, char *port) {
 	return srv;
 }
 
-#define strlcpy _strlcpy
-static void
-strlcpy(char *to, const char *from, int l) {
-	memccpy(to, from, '\0', l);
-	to[l-1] = '\0';
-}
-
 static char *
 eat(char *s, int (*p)(int), int r) {
 	while(*s != '\0' && p(*s) == r)
