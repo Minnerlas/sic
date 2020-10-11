@@ -1,4 +1,6 @@
  /* See LICENSE file for license details. */
+#include <sys/select.h>
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
