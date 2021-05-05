@@ -1,58 +1,59 @@
-# sic - simple irc client
+.POSIX:
 
-include config.mk
+NAME = sic
+VERSION = 1.3
 
-SRC = sic.c
+# paths
+PREFIX = /usr/local
+MANPREFIX = ${PREFIX}/share/man
+
+# use system flags.
+SIC_CFLAGS = ${CFLAGS}
+SIC_LDFLAGS = ${LDFLAGS}
+SIC_CPPFLAGS = ${LDFLAGS} -DVERSION=\"${VERSION}\" -D_GNU_SOURCE
+
+BIN = sic
+SRC = ${BIN:=.c}
 OBJ = ${SRC:.c=.o}
+MAN1 = ${BIN:=.1}
 
-all: options sic
+all: ${BIN}
 
-options:
-	@echo sic build options:
-	@echo "CFLAGS   = ${CFLAGS}"
-	@echo "LDFLAGS  = ${LDFLAGS}"
-	@echo "CC       = ${CC}"
+${BIN}: ${@:=.o}
+
+${OBJ}: config.h strlcpy.c util.c
+
+.o:
+	${CC} -o $@ $< ${SIC_LDFLAGS}
 
 .c.o:
-	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
-
-${OBJ}: config.h config.mk strlcpy.c util.c
+	${CC} -c ${SIC_CFLAGS} ${SIC_CPPFLAGS} -o $@ -c $<
 
 config.h:
-	@echo creating $@ from config.def.h
-	@cp config.def.h $@
-
-sic: ${OBJ}
-	@echo CC -o $@
-	@${CC} -o $@ ${OBJ} ${LDFLAGS}
+	cp config.def.h $@
 
 clean:
-	@echo cleaning
-	@rm -f sic ${OBJ} sic-${VERSION}.tar.gz
+	rm -f ${BIN} ${OBJ} "${NAME}-${VERSION}.tar.gz"
 
-dist: clean
-	@echo creating dist tarball
-	@mkdir -p sic-${VERSION}
-	@cp -R LICENSE Makefile README arg.h config.def.h config.mk sic.1 sic.c util.c strlcpy.c sic-${VERSION}
-	@tar -cf sic-${VERSION}.tar sic-${VERSION}
-	@gzip sic-${VERSION}.tar
-	@rm -rf sic-${VERSION}
+dist:
+	mkdir -p "${NAME}-${VERSION}"
+	cp -fR LICENSE Makefile README arg.h config.def.h \
+		${MAN1} ${SRC} util.c strlcpy.c "${NAME}-${VERSION}"
+	tar -cf - "${NAME}-${VERSION}" | \
+		gzip -c > "${NAME}-${VERSION}.tar.gz"
+	rm -rf "${NAME}-${VERSION}"
 
 install: all
-	@echo installing executable file to ${DESTDIR}${PREFIX}/bin
-	@mkdir -p ${DESTDIR}${PREFIX}/bin
-	@cp -f sic ${DESTDIR}${PREFIX}/bin
-	@chmod 755 ${DESTDIR}${PREFIX}/bin/sic
-	@echo installing manual page to ${DESTDIR}${MANPREFIX}/man1
-	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
-	@sed "s/VERSION/${VERSION}/g" < sic.1 > ${DESTDIR}${MANPREFIX}/man1/sic.1
-	@chmod 644 ${DESTDIR}${MANPREFIX}/man1/sic.1
+	mkdir -p ${DESTDIR}${PREFIX}/bin
+	cp -f ${BIN} "${DESTDIR}${PREFIX}/bin"
+	chmod 755 "${DESTDIR}${PREFIX}/bin/${BIN}"
+	mkdir -p "${DESTDIR}${MANPREFIX}/man1"
+	sed "s/VERSION/${VERSION}/g" < ${MAN1} > "${DESTDIR}${MANPREFIX}/man1/${MAN1}"
+	chmod 644 "${DESTDIR}${MANPREFIX}/man1/${MAN1}"
 
 uninstall:
-	@echo removing executable file from ${DESTDIR}${PREFIX}/bin
-	@rm -f ${DESTDIR}${PREFIX}/bin/sic
-	@echo removing manual page from ${DESTDIR}${MANPREFIX}/man1
-	@rm -f ${DESTDIR}${MANPREFIX}/man1/sic.1
+	rm -f \
+		"${DESTDIR}${PREFIX}/bin/${BIN}"\
+		"${DESTDIR}${MANPREFIX}/man1/${MAN1}"
 
-.PHONY: all options clean dist install uninstall
+.PHONY: all clean dist install uninstall
