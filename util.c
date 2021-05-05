@@ -19,7 +19,7 @@ eprint(const char *fmt, ...) {
 static int
 dial(char *host, char *port) {
 	static struct addrinfo hints;
-	int srv;
+	int fd;
 	struct addrinfo *res, *r;
 
 	memset(&hints, 0, sizeof hints);
@@ -28,16 +28,16 @@ dial(char *host, char *port) {
 	if(getaddrinfo(host, port, &hints, &res) != 0)
 		eprint("error: cannot resolve hostname '%s':", host);
 	for(r = res; r; r = r->ai_next) {
-		if((srv = socket(r->ai_family, r->ai_socktype, r->ai_protocol)) == -1)
+		if((fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol)) == -1)
 			continue;
-		if(connect(srv, r->ai_addr, r->ai_addrlen) == 0)
+		if(connect(fd, r->ai_addr, r->ai_addrlen) == 0)
 			break;
-		close(srv);
+		close(fd);
 	}
 	freeaddrinfo(res);
 	if(!r)
 		eprint("error: cannot connect to host '%s'\n", host);
-	return srv;
+	return fd;
 }
 
 static char *
