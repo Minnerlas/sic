@@ -61,7 +61,7 @@ trim(char *s) {
 	char *e;
 
 	e = s + strlen(s) - 1;
-	while(isspace(*e) && e > s)
+	while(e > s && isspace(*e))
 		e--;
 	*(e + 1) = '\0';
 }
