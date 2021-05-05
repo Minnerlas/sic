@@ -18,9 +18,9 @@ eprint(const char *fmt, ...) {
 
 static int
 dial(char *host, char *port) {
-	static struct addrinfo hints;
-	int fd;
+	struct addrinfo hints;
 	struct addrinfo *res, *r;
+	int fd;
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
