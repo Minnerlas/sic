@@ -42,7 +42,7 @@ dial(char *host, char *port) {
 
 static char *
 eat(char *s, int (*p)(int), int r) {
-	while(*s != '\0' && p(*s) == r)
+	while(*s != '\0' && p((unsigned char)*s) == r)
 		s++;
 	return s;
 }
@@ -61,7 +61,7 @@ trim(char *s) {
 	char *e;
 
 	e = s + strlen(s) - 1;
-	while(e > s && isspace(*e))
+	while(e > s && isspace((unsigned char)*e))
 		e--;
 	*(e + 1) = '\0';
 }
