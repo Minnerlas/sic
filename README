@@ -1,9 +1,9 @@
 sic - simple irc client
 =======================
-sic is an extremly fast, small and simple irc client.  It reads commands from
+sic is an extremely fast, small and simple irc client.  It reads commands from
 standard input and prints all server output to standard output. It multiplexes
-also all channel traffic into one output, that you don't have to switch
-different channel buffers, that's actually a feature.
+also all channel traffic into one output so that you don't have to switch
+different channel buffers: that's actually a feature.
 
 
 Installation
