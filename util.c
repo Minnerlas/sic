@@ -60,8 +60,7 @@ static void
 trim(char *s) {
 	char *e;
 
-	e = s + strlen(s) - 1;
-	while(e > s && isspace((unsigned char)*e))
-		e--;
-	*(e + 1) = '\0';
+	for (e = s + strlen(s); e > s && isspace((unsigned char)*(e - 1)); e--)
+		;
+	*e = '\0';
 }
