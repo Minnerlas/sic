@@ -1,17 +1,17 @@
  /* See LICENSE file for license details. */
-#include <sys/select.h>
+#include <sys/types.h>
 
 #include <ctype.h>
 #include <errno.h>
-#include <stdarg.h>
+#include <varargs.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
+#include <sys/time.h>
 
 #include "arg.h"
 #include "config.h"
+
+extern char *getenv();
 
 char *argv0;
 static char *host = DEFAULT_HOST;
@@ -28,32 +28,59 @@ static FILE *srv;
 #include "strlcpy.c"
 #include "util.c"
 
+static int
+isspac(a) {
+	return isspace(a);
+}
+
 static void
-pout(char *channel, char *fmt, ...) {
+pout(channel, fmt, va_alist)
+char *channel;
+char *fmt;
+va_dcl
+{
 	static char timestr[80];
 	time_t t;
 	va_list ap;
 
-	va_start(ap, fmt);
-	vsnprintf(bufout, sizeof bufout, fmt, ap);
+	char *tmp, *tmp1;
+	struct tm *tm;
+	struct timeval tv;
+	
+
+	va_start(ap);
+	vsprintf(bufout, fmt, ap);
 	va_end(ap);
 	t = time(NULL);
-	strftime(timestr, sizeof timestr, TIMESTAMP_FORMAT, localtime(&t));
-	fprintf(stdout, "%-12s: %s %s\n", channel, timestr, bufout);
+	/* strftime(timestr, sizeof timestr, TIMESTAMP_FORMAT, localtime(&t));*/
+	/* fprintf(stdout, "%-12s: %s %s\n", channel, timestr, bufout); */
+
+	gettimeofday(&tv,(struct timezone *)0);
+	tm = localtime((time_t *)&tv.tv_sec);
+	tmp = asctime(tm);
+	tmp1 = strchr(tmp, '\n');
+	if (*tmp1 == '\n') *tmp1 = '\0';
+
+	fprintf(stdout, "%-12s: %s %s\n", channel, tmp, bufout);
 }
 
 static void
-sout(char *fmt, ...) {
+sout(fmt, va_alist)
+char *fmt;
+va_dcl
+{
 	va_list ap;
 
-	va_start(ap, fmt);
-	vsnprintf(bufout, sizeof bufout, fmt, ap);
+	va_start(ap);
+	vsprintf(bufout, fmt, ap);
 	va_end(ap);
 	fprintf(srv, "%s\r\n", bufout);
 }
 
 static void
-privmsg(char *channel, char *msg) {
+privmsg(channel, msg)
+char *channel; char *msg;
+{
 	if(channel[0] == '\0') {
 		pout("", "No channel to send to");
 		return;
@@ -63,7 +90,9 @@ privmsg(char *channel, char *msg) {
 }
 
 static void
-parsein(char *s) {
+parsein(s)
+char *s;
+{
 	char c, *p;
 
 	if(s[0] == '\0')
@@ -74,7 +103,7 @@ parsein(char *s) {
 		return;
 	}
 	c = *++s;
-	if(c != '\0' && isspace((unsigned char)s[1])) {
+	if(c != '\0' && isspac((unsigned char)s[1])) {
 		p = s + 2;
 		switch(c) {
 		case 'j':
@@ -83,8 +112,8 @@ parsein(char *s) {
 				strlcpy(channel, p, sizeof channel);
 			return;
 		case 'l':
-			s = eat(p, isspace, 1);
-			p = eat(s, isspace, 0);
+			s = eat(p, isspac, 1);
+			p = eat(s, isspac, 0);
 			if(!*s)
 				s = channel;
 			if(*p)
@@ -94,8 +123,8 @@ parsein(char *s) {
 			sout("PART %s :%s", s, p);
 			return;
 		case 'm':
-			s = eat(p, isspace, 1);
-			p = eat(s, isspace, 0);
+			s = eat(p, isspac, 1);
+			p = eat(s, isspac, 0);
 			if(*p)
 				*p++ = '\0';
 			privmsg(s, p);
@@ -109,7 +138,9 @@ parsein(char *s) {
 }
 
 static void
-parsesrv(char *cmd) {
+parsesrv(cmd)
+char *cmd;
+{
 	char *usr, *par, *txt;
 
 	usr = host;
@@ -141,14 +172,18 @@ parsesrv(char *cmd) {
 
 
 static void
-usage(void) {
+usage() {
 	eprint("usage: sic [-h host] [-p port] [-n nick] [-k keyword] [-v]\n", argv0);
 }
 
 int
-main(int argc, char *argv[]) {
+main(argc, argv)
+int argc;
+char *argv[];
+{
 	struct timeval tv;
-	const char *user = getenv("USER");
+	char *user = getenv("USER");;
+	static char vermsg[256];
 	int n;
 	fd_set rd;
 
@@ -167,7 +202,8 @@ main(int argc, char *argv[]) {
 		password = EARGF(usage());
 		break;
 	case 'v':
-		eprint("sic-"VERSION", © 2005-2014 Kris Maglione, Anselm R. Garbe, Nico Golde\n");
+		eprint("sic %s, © 2005-2024 Kris Maglione, Anselm R. Garbe, Nico Golde, Nikola Radojevic\n",
+			VERSION);
 		break;
 	default:
 		usage();

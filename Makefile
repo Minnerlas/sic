@@ -1,7 +1,5 @@
-.POSIX:
-
 NAME = sic
-VERSION = 1.3
+VERSION = 1.3.1
 
 # paths
 PREFIX = /usr/local
@@ -13,13 +11,14 @@ SIC_LDFLAGS = ${LDFLAGS}
 SIC_CPPFLAGS = ${LDFLAGS} -DVERSION=\"${VERSION}\" -D_GNU_SOURCE
 
 BIN = sic
-SRC = ${BIN:=.c}
-OBJ = ${SRC:.c=.o}
-MAN1 = ${BIN:=.1}
+SRC = ${BIN}.c
+OBJ = ${BIN}.o
+MAN1 = ${BIN}.1
 
 all: ${BIN}
 
-${BIN}: ${@:=.o}
+${BIN}: ${OBJ}
+	cc -o $@ ${OBJ} ${SIC_LDFLAGS}
 
 ${OBJ}: config.h strlcpy.c util.c
 
