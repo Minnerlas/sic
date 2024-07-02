@@ -182,8 +182,7 @@ int argc;
 char *argv[];
 {
 	struct timeval tv;
-	char *user = getenv("USER");;
-	static char vermsg[256];
+	char *user = getenv("USER");
 	int n;
 	fd_set rd;
 
